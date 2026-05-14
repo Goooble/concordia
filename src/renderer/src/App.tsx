@@ -28,9 +28,7 @@ function App(): React.JSX.Element {
         </div>
         <button
           onClick={async () => {
-            const folderPath = await window.api.selectFolder()
-
-            console.log(folderPath)
+            window.api.startIndexing()
           }}
         >
           Add Folder

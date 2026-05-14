@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { registerIpcHandlers } from './ipc'
 
 function createWindow(): void {
   // Create the browser window.
@@ -51,17 +52,7 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
-  ipcMain.handle('dialog:selectFolder', async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openDirectory']
-    })
-
-    if (result.canceled) {
-      return null
-    }
-
-    return result.filePaths[0]
-  })
+  registerIpcHandlers()
   createWindow()
 
   app.on('activate', function () {

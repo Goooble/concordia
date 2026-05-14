@@ -1,6 +1,6 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 interface API {
-  selectFolder: () => Promise<string | null>
+  startIndexing: () => void
 }
 
 declare global {

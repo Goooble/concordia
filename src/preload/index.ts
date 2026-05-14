@@ -3,7 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
-  selectFolder: () => ipcRenderer.invoke('dialog:selectFolder')
+  startIndexing: () => ipcRenderer.send('startIndexing')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
