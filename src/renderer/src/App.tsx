@@ -26,6 +26,15 @@ function App(): React.JSX.Element {
             Send IPC
           </a>
         </div>
+        <button
+          onClick={async () => {
+            const folderPath = await window.api.selectFolder()
+
+            console.log(folderPath)
+          }}
+        >
+          Add Folder
+        </button>
       </div>
       <Versions></Versions>
     </>
