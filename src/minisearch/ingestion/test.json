@@ -1,0 +1,102 @@
+[
+  {
+    "id": "1",
+    "title": "Dual Array Trie",
+    "content": "Dual Array Tries are compact trie structures used for prefix search and autocomplete. They store transitions in base and check arrays."
+  },
+  {
+    "id": "2",
+    "title": "Trie Data Structure",
+    "content": "A trie stores strings character by character. Tries support efficient prefix search and autocomplete operations."
+  },
+  {
+    "id": "3",
+    "title": "Inverted Index",
+    "content": "An inverted index maps terms to documents. Search engines use inverted indexes for fast document retrieval."
+  },
+  {
+    "id": "4",
+    "title": "BM25 Ranking",
+    "content": "BM25 ranks documents using term frequency, document frequency, and document length normalization."
+  },
+  {
+    "id": "5",
+    "title": "Prefix Search",
+    "content": "Prefix search finds terms that begin with a given prefix. Tries are commonly used for prefix search."
+  },
+  {
+    "id": "6",
+    "title": "Autocomplete Systems",
+    "content": "Autocomplete systems use tries or finite state structures to suggest words while users type queries."
+  },
+  {
+    "id": "7",
+    "title": "Hash Tables",
+    "content": "Hash tables provide constant time average lookup, insertion, and deletion using hash functions."
+  },
+  {
+    "id": "8",
+    "title": "Binary Search Tree",
+    "content": "Binary search trees maintain sorted data and support logarithmic search, insertion, and deletion."
+  },
+  {
+    "id": "9",
+    "title": "Dijkstra Algorithm",
+    "content": "Dijkstra algorithm finds shortest paths in weighted graphs using a priority queue."
+  },
+  {
+    "id": "10",
+    "title": "Graph Traversal",
+    "content": "Depth first search and breadth first search are fundamental graph traversal algorithms."
+  },
+  {
+    "id": "11",
+    "title": "Search Engine Architecture",
+    "content": "Search engines tokenize documents, build inverted indexes, rank results, and provide autocomplete."
+  },
+  {
+    "id": "12",
+    "title": "Document Tokenization",
+    "content": "Tokenization splits text into searchable terms. Most search engines lowercase and normalize tokens."
+  },
+  {
+    "id": "13",
+    "title": "AVL Trees",
+    "content": "AVL trees are self-balancing binary search trees that maintain logarithmic height through rotations."
+  },
+  {
+    "id": "14",
+    "title": "Red Black Trees",
+    "content": "Red black trees are balanced search trees used in many standard library implementations."
+  },
+  {
+    "id": "15",
+    "title": "B Trees",
+    "content": "B trees are optimized for disk storage and are commonly used in databases and file systems."
+  },
+  {
+    "id": "16",
+    "title": "Dynamic Programming",
+    "content": "Dynamic programming solves problems by storing solutions to overlapping subproblems."
+  },
+  {
+    "id": "17",
+    "title": "Merge Sort",
+    "content": "Merge sort is a divide and conquer sorting algorithm with O(n log n) time complexity."
+  },
+  {
+    "id": "18",
+    "title": "Quick Sort",
+    "content": "Quick sort partitions arrays around a pivot and performs efficiently on average."
+  },
+  {
+    "id": "19",
+    "title": "Heap Data Structure",
+    "content": "A heap is a complete binary tree used to implement priority queues efficiently."
+  },
+  {
+    "id": "20",
+    "title": "Finite State Automata",
+    "content": "Finite state automata are used in text processing, lexical analysis, and efficient string matching."
+  }
+]

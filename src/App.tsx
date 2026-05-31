@@ -1,19 +1,32 @@
 import "./App.css";
 import "@xyflow/react/dist/style.css";
+import test from "./minisearch/ingestion/test.json";
+import documents from "./minisearch/ingestion/documents.json";
+import { type Document } from "./types";
 
 import { useMemo, useState } from "react";
-import { ReactFlow } from "@xyflow/react";
+import { MiniMap, ReactFlow } from "@xyflow/react";
 
-import { main } from "./minisearch/main";
+import { main } from "./minisearch/trie/main";
 import { trieToFlow } from "./flow";
+import { SearchEngine } from "./minisearch/search/engine";
 
 function App() {
+  const engine = useMemo(() => {
+    const e = new SearchEngine();
+
+    e.addAll(documents);
+
+    return e;
+  }, []);
+
+  //trie
   const { trie } = useMemo(() => main(), []);
 
   const [query, setQuery] = useState("");
   const [highlightedNodes, setHighlightedNodes] = useState<number[]>([]);
   const [found, setFound] = useState<boolean | null>(null);
-
+  const [results, setResults] = useState<Document[]>([]); //invIndex
   const tree = useMemo(() => trie.toJSON(), [trie]);
 
   const { nodes, edges } = useMemo(
@@ -48,14 +61,18 @@ function App() {
 
             setHighlightedNodes(visited);
             setFound(trie.search(value));
+            setResults(engine.search(value));
           }}
         />
+        <div>
+          {results.map((doc) => (
+            <div key={doc.id}>
+              <h3>{doc.title}</h3>
 
-        {query.length > 0 && (
-          <span style={{ marginLeft: "1rem" }}>
-            {found ? "Found" : "Not Found"}
-          </span>
-        )}
+              <p>{doc.content.slice(0, 150)}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div

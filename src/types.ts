@@ -32,3 +32,9 @@ export type FlowEdge = {
   source: string;
   target: string;
 };
+
+export type Document = {
+  id: string;
+  title: string;
+  content: string;
+};
