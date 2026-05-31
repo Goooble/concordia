@@ -1,3 +1,4 @@
+import { type TrieJSON } from "./types";
 function TreeNode({
   node,
   highlightedNodes,

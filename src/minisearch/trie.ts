@@ -1,10 +1,4 @@
-type TrieJSON = {
-  id: number;
-  label: string;
-  isWord: boolean;
-  children: TrieJSON[];
-};
-
+import { type TrieJSON } from "../types";
 export class TrieNode {
   id: number; //useful for react later
   children = new Map<string, TrieNode>();
