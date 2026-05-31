@@ -1,12 +1,11 @@
 import "./App.css";
 import "@xyflow/react/dist/style.css";
-import test from "./minisearch/ingestion/test.json";
 import documents from "./minisearch/ingestion/documents.json";
+import test from "./minisearch/ingestion/test.json";
 import { type Document } from "./types";
 
 import { useMemo, useState } from "react";
-import { MiniMap, ReactFlow, Background, Controls } from "@xyflow/react";
-import Markdown from "react-markdown";
+import { ReactFlow, Background, Controls } from "@xyflow/react";
 import removeMarkdown from "remove-markdown";
 import { Group, Panel, Separator } from "react-resizable-panels";
 
@@ -18,19 +17,22 @@ function App() {
   const engine = useMemo(() => {
     const e = new SearchEngine();
 
-    e.addAll(documents);
+    e.addAll(test);
 
     return e;
   }, []);
 
   //trie
-  const { trie } = useMemo(() => main(), []);
 
   const [query, setQuery] = useState("");
   const [highlightedNodes, setHighlightedNodes] = useState<number[]>([]);
   const [found, setFound] = useState<boolean | null>(null);
   const [results, setResults] = useState<Document[]>([]); //invIndex
-  const tree = useMemo(() => trie.toJSON(), [trie]);
+  //trie testing
+  // engine.trie.insert("cat");
+  // engine.trie.insert("car");
+  // engine.trie.insert("cart");
+  const tree = useMemo(() => engine.trie.toJSON(), [engine.trie]);
 
   const { nodes, edges } = useMemo(
     () => trieToFlow(tree, highlightedNodes),
@@ -59,9 +61,9 @@ function App() {
               onChange={(e) => {
                 const value = e.target.value;
                 setQuery(value);
-                const visited = [...trie.searchSteps(value)];
+                const visited = [...engine.trie.searchSteps(value)];
                 setHighlightedNodes(visited);
-                setFound(trie.search(value));
+                setFound(engine.trie.search(value));
                 setResults(engine.search(value));
               }}
               className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"

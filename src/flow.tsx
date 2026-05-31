@@ -48,8 +48,8 @@ export function trieToFlow(tree: any, highlightedNodes: number[]) {
 
   graph.setGraph({
     rankdir: "TB", // Top -> Bottom
-    ranksep: 60,
-    nodesep: 80,
+    ranksep: 10,
+    nodesep: 10,
   });
 
   nodes.forEach((node) => {

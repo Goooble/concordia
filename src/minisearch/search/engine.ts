@@ -1,9 +1,12 @@
 import { InvertedIndex } from "./invIndex";
 import { tokenize } from "../ingestion/tokenizer";
+import { Trie } from "../trie/trie";
 import { type Document } from "../../types";
 export class SearchEngine {
   private docs = new Map<string, Document>();
   private index = new InvertedIndex();
+
+  trie = new Trie();
 
   /**
    * Add a document to the search engine.
@@ -22,10 +25,12 @@ export class SearchEngine {
 
     // Tokenize title + content
     const tokens = tokenize(`${doc.title} ${doc.content}`);
+    const uniqueTokens = new Set(tokens);
 
     // Add every token to the inverted index
-    for (const token of tokens) {
+    for (const token of uniqueTokens) {
       this.index.add(token, doc.id);
+      this.trie.insert(token);
     }
   }
 
