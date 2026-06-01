@@ -12,6 +12,7 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { main } from "./minisearch/trie/main";
 import { trieToFlow } from "./flow";
 import { SearchEngine } from "./minisearch/search/engine";
+import CameraController from "./camera";
 
 function App() {
   const engine = useMemo(() => {
@@ -124,6 +125,10 @@ function App() {
               {/* Light grid background pattern */}
               <Background color="#cbd5e1" gap={20} size={1} />
               <Controls className="!bg-white !border !border-slate-200 !rounded-lg !shadow-lg" />
+              <CameraController
+                highlightedNodes={highlightedNodes}
+                nodes={nodes}
+              />
             </ReactFlow>
           </div>
         </Panel>
