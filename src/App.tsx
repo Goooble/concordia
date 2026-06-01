@@ -4,7 +4,7 @@ import documents from "./minisearch/ingestion/documents.json";
 import test from "./minisearch/ingestion/test.json";
 import { type Document } from "./types";
 
-import { useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { ReactFlow, Background, Controls } from "@xyflow/react";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -20,7 +20,7 @@ function App() {
   const engine = useMemo(() => {
     const e = new SearchEngine();
 
-    e.addAll(documents);
+    e.addAll(test);
 
     return e;
   }, []);
@@ -33,12 +33,7 @@ function App() {
   const [results, setResults] = useState<Document[]>([]); //invIndex
   const [operator, setOperator] = useState<"AND" | "OR">("AND");
   const [visualize, setVisualize] = useState(Boolean(false));
-  //trie testing
-  // engine.trie.insert("cat");
-  // engine.trie.insert("car");
-  // engine.trie.insert("cart");
-
-  // const tree = useMemo(() => engine.trie.toJSON(), [engine.trie]);
+  const [suggestions, setSuggestions] = useState<string[]>([]); //trie suggestions for current query
 
   const baseGraph = useMemo(() => {
     if (!visualize) {
@@ -80,7 +75,7 @@ function App() {
         >
           {/* title */}
           <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
               MiniSearch
             </h2>
 
@@ -99,7 +94,7 @@ function App() {
                 />
 
                 {/* Switch Background track */}
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
               </div>
             </label>
           </div>
@@ -111,10 +106,18 @@ function App() {
               onChange={(e) => {
                 const value = e.target.value;
                 setQuery(value);
+                setFound(engine.trie.search(value));
+                const words = value.toLowerCase().split(/\s+/).filter(Boolean);
+                let triesuggest = "";
+                words.forEach((word) => {
+                  triesuggest += " " + engine.trie.prefixSearch(word).join(" ");
+                });
+                setSuggestions(triesuggest.split(" "));
+                //highlights
                 const visited = [...engine.trie.searchSteps(value)];
                 setHighlightedNodes(visited);
-                setFound(engine.trie.search(value));
-                setResults(engine.search(value, operator));
+                console.log(triesuggest);
+                setResults(engine.search(triesuggest, operator));
               }}
               className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"
             />
@@ -203,7 +206,7 @@ function App() {
                   fitView
                 >
                   <Background color="#cbd5e1" gap={20} size={1} />
-                  <Controls className="!bg-white !border !border-slate-200 !rounded-lg !shadow-lg" />
+                  <Controls className="bg-white! border! border-slate-200! rounded-lg! shadow-lg!" />
                   <CameraController
                     highlightedNodes={highlightedNodes}
                     nodes={nodes}

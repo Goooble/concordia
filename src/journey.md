@@ -33,3 +33,20 @@ made some optimzations to render the graph for the test document better
 ## trie
 
 should i make into a radix tree or should i just work through my roadmap and build a DAT instead and the fuzzy search yeah probably that instead oh and also boolean search
+
+## boolean search
+
+Implemented it, it was pretty easy since it was just on teh engine side and not really on the trie
+But visualizing it needed some scripts - which actually is a good ALGORITHM so yay should probably present that lol since its used by LUCENE and ELASTIC search might give us some brownie points
+
+## Visualizer toggling
+
+After a bunch of crashes, managed to get the visualizer to toggle and then render docs when its turned off
+lesson learnt: if(visualizer) return {edges: [], nodes: []} rather than just returning null that can crash everything else lol
+
+## prefix searching
+
+realized it would only work for OR
+TODO
+I am thinking of adding a separate "suggestiosn" drop down from teh searchbox but that can wait as i can still demonstrate with
+next, visualize prefix search and check if searchstep is really necessary

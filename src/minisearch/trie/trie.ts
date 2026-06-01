@@ -74,6 +74,29 @@ export class Trie {
       yield id;
     }
   }
+  prefixSearch(prefix: string): string[] {
+    const startNode = this.traverse(prefix);
+
+    if (!startNode) {
+      return [];
+    }
+
+    const results: string[] = [];
+
+    const dfs = (node: TrieNode, currentWord: string) => {
+      if (node.isWord) {
+        results.push(currentWord);
+      }
+
+      for (const [ch, child] of node.children) {
+        dfs(child, currentWord + ch);
+      }
+    };
+
+    dfs(startNode, prefix);
+
+    return results;
+  }
   insert(word: string): void {
     let node = this.root;
 

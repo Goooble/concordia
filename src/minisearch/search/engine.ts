@@ -60,6 +60,7 @@ export class SearchEngine {
    * Result:
    *   {1}
    */
+
   search(query: string, operator: "AND" | "OR" = "AND"): Document[] {
     const tokens = tokenize(query);
 
