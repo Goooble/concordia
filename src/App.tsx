@@ -13,6 +13,7 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { buildFlowGraph } from "./flow";
 import { SearchEngine } from "./minisearch/search/engine";
 import CameraController from "./camera";
+import { getSnippets } from "./utils/getSnippets";
 
 function App() {
   const engine = useMemo(() => {
@@ -30,6 +31,7 @@ function App() {
   const [found, setFound] = useState<boolean | null>(null);
   const [results, setResults] = useState<Document[]>([]); //invIndex
   const [operator, setOperator] = useState<"AND" | "OR">("AND");
+  const [visualize, setVisualize] = useState(Boolean(true));
   //trie testing
   // engine.trie.insert("cat");
   // engine.trie.insert("car");
@@ -68,10 +70,31 @@ function App() {
           maxSize="45%"
           className="overflow-y-auto border-r border-slate-200 bg-white p-6 shadow-xl flex flex-col"
         >
-          <h2 className="mb-6 text-2xl font-bold tracking-tight text-slate-900">
-            MiniSearch
-          </h2>
+          {/* title */}
+          <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              MiniSearch
+            </h2>
 
+            <label className="flex items-center gap-3 cursor-pointer select-none group">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                Visualize
+              </span>
+
+              {/* Sexy Custom Switch Toggle Container */}
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={visualize === true}
+                  onChange={() => setVisualize(!visualize)}
+                  className="sr-only peer" // Hides the default ugly checkbox completely
+                />
+
+                {/* Switch Background track */}
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+              </div>
+            </label>
+          </div>
           {/* Search Input Container */}
           <div className="relative group shrink-0">
             <input
@@ -130,7 +153,8 @@ function App() {
 
             <div className="space-y-4 overflow-y-auto pr-1 flex-1 custom-scrollbar">
               {results.map((doc) => {
-                const snippet = getSnippet(removeMarkdown(doc.content), query);
+                const snippets = getSnippets(doc.content, query);
+
                 return (
                   <div
                     key={doc.id}
@@ -139,84 +163,71 @@ function App() {
                     <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
                       {doc.title}
                     </h3>
-                    <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-                      <HighlightedText text={snippet} query={query} />
-                    </p>
+
+                    {snippets.map((snippet, idx) => (
+                      <p
+                        key={idx}
+                        className="mt-2 text-sm text-slate-500 leading-relaxed"
+                      >
+                        <HighlightedText text={snippet} query={query} />
+                      </p>
+                    ))}
                   </div>
                 );
               })}
             </div>
           </div>
         </Panel>
+        {visualize && (
+          <>
+            {/* Resizable Separator Widget */}
+            <Separator className="w-2 bg-slate-100 cursor-col-resize flex items-center justify-center transition-colors duration-150 hover:bg-indigo-100 active:bg-indigo-200">
+              <div className="w-0.5 h-8 bg-slate-300 rounded-full" />
+            </Separator>
 
-        {/* Resizable Separator Widget */}
-        <Separator className="w-2 bg-slate-100 cursor-col-resize flex items-center justify-center transition-colors duration-150 hover:bg-indigo-100 active:bg-indigo-200">
-          {/* Visual Grab Handle Accent line */}
-          <div className="w-0.5 h-8 bg-slate-300 rounded-full" />
-        </Separator>
-
-        {/* Right Flow Graph Panel */}
-        <Panel className="relative bg-white">
-          <div className="absolute inset-0 w-full h-full">
-            <ReactFlow
-              nodes={nodes}
-              edges={baseGraph.edges}
-              onlyRenderVisibleElements
-              fitView
-            >
-              {/* Light grid background pattern */}
-              <Background color="#cbd5e1" gap={20} size={1} />
-              <Controls className="bg-white! border! border-slate-200! rounded-lg! shadow-lg!" />
-              <CameraController
-                highlightedNodes={highlightedNodes}
-                nodes={nodes}
-              />
-            </ReactFlow>
-          </div>
-        </Panel>
+            {/* Right Flow Graph Panel */}
+            <Panel className="relative bg-white">
+              <div className="absolute inset-0 w-full h-full">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={baseGraph.edges}
+                  onlyRenderVisibleElements
+                  fitView
+                >
+                  <Background color="#cbd5e1" gap={20} size={1} />
+                  <Controls className="!bg-white !border !border-slate-200 !rounded-lg !shadow-lg" />
+                  <CameraController
+                    highlightedNodes={highlightedNodes}
+                    nodes={nodes}
+                  />
+                </ReactFlow>
+              </div>
+            </Panel>
+          </>
+        )}
       </Group>
     </div>
   );
 }
 //move to different file later
-function getSnippet(text: string, query: string, contextLength = 200) {
-  if (!query) {
-    return text.slice(0, 100);
-  }
-
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-
-  const index = lowerText.indexOf(lowerQuery);
-
-  if (index === -1) {
-    return text.slice(0, 100);
-  }
-
-  const start = Math.max(0, index - contextLength);
-
-  const end = Math.min(text.length, index + query.length + contextLength);
-
-  return (
-    (start > 0 ? "..." : "") +
-    text.slice(start, end) +
-    (end < text.length ? "..." : "")
-  );
-}
 
 function HighlightedText({ text, query }: { text: string; query: string }) {
-  if (!query) {
+  const terms = query.split(/\s+/).filter(Boolean);
+
+  if (terms.length === 0) {
     return <>{text}</>;
   }
 
-  const regex = new RegExp(`(${query})`, "gi");
+  const regex = new RegExp(`(${terms.join("|")})`, "gi");
 
   const parts = text.split(regex);
-  console.log(parts);
+
+  const highlightedTerms = new Set(terms.map((t) => t.toLowerCase()));
+
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
+        highlightedTerms.has(part.toLowerCase()) ? (
           <span
             key={i}
             className="rounded bg-red-100 px-1 font-semibold text-red-600"
@@ -230,5 +241,4 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
     </>
   );
 }
-
 export default App;
