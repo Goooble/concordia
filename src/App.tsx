@@ -1,12 +1,12 @@
 import "./App.css";
 import "@xyflow/react/dist/style.css";
-// import documents from "./minisearch/ingestion/documents.json";
+import documents from "./minisearch/ingestion/documents.json";
 import test from "./minisearch/ingestion/test.json";
 import { type Document } from "./types";
 
 import { useMemo, useState } from "react";
 import { ReactFlow, Background, Controls } from "@xyflow/react";
-import removeMarkdown from "remove-markdown";
+
 import { Group, Panel, Separator } from "react-resizable-panels";
 
 // import { main } from "./minisearch/trie/main";
@@ -14,12 +14,13 @@ import { buildFlowGraph } from "./flow";
 import { SearchEngine } from "./minisearch/search/engine";
 import CameraController from "./camera";
 import { getSnippets } from "./utils/getSnippets";
+import HighlightedText from "./utils/HighlightedText";
 
 function App() {
   const engine = useMemo(() => {
     const e = new SearchEngine();
 
-    e.addAll(test);
+    e.addAll(documents);
 
     return e;
   }, []);
@@ -31,7 +32,7 @@ function App() {
   const [found, setFound] = useState<boolean | null>(null);
   const [results, setResults] = useState<Document[]>([]); //invIndex
   const [operator, setOperator] = useState<"AND" | "OR">("AND");
-  const [visualize, setVisualize] = useState(Boolean(true));
+  const [visualize, setVisualize] = useState(Boolean(false));
   //trie testing
   // engine.trie.insert("cat");
   // engine.trie.insert("car");
@@ -40,8 +41,15 @@ function App() {
   // const tree = useMemo(() => engine.trie.toJSON(), [engine.trie]);
 
   const baseGraph = useMemo(() => {
+    if (!visualize) {
+      return {
+        nodes: [],
+        edges: [],
+      };
+    }
+
     return buildFlowGraph(engine.trie.toJSON());
-  }, [engine.trie]);
+  }, [engine.trie, visualize]);
   const highlightedSet = useMemo(
     () => new Set(highlightedNodes),
     [highlightedNodes],
@@ -211,34 +219,4 @@ function App() {
 }
 //move to different file later
 
-function HighlightedText({ text, query }: { text: string; query: string }) {
-  const terms = query.split(/\s+/).filter(Boolean);
-
-  if (terms.length === 0) {
-    return <>{text}</>;
-  }
-
-  const regex = new RegExp(`(${terms.join("|")})`, "gi");
-
-  const parts = text.split(regex);
-
-  const highlightedTerms = new Set(terms.map((t) => t.toLowerCase()));
-
-  return (
-    <>
-      {parts.map((part, i) =>
-        highlightedTerms.has(part.toLowerCase()) ? (
-          <span
-            key={i}
-            className="rounded bg-red-100 px-1 font-semibold text-red-600"
-          >
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      )}
-    </>
-  );
-}
 export default App;
