@@ -1,4 +1,5 @@
 import { type TrieJSON } from "../../types";
+import { type TrieStep } from "../../types";
 export class TrieNode {
   id: number; //useful for react later
   children = new Map<string, TrieNode>();
@@ -97,6 +98,39 @@ export class Trie {
 
     return results;
   }
+  *prefixSearchSteps(prefix: string): Generator<TrieStep> {
+    const prefixPath: TrieNode[] = [];
+
+    const startNode = this.traverse(prefix, (node) => prefixPath.push(node));
+
+    if (!startNode) {
+      return;
+    }
+
+    for (const node of prefixPath) {
+      yield {
+        nodeId: node.id,
+        type: "prefix",
+      };
+    }
+
+    function* dfs(node: TrieNode): Generator<TrieStep> {
+      yield {
+        nodeId: node.id,
+        type: node.isWord ? "found" : "visited",
+      };
+
+      for (const child of node.children.values()) {
+        yield* dfs(child);
+      }
+    }
+
+    // Skip startNode itself because it is already "prefix"
+    for (const child of startNode.children.values()) {
+      yield* dfs(child);
+    }
+  }
+
   insert(word: string): void {
     let node = this.root;
 

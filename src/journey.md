@@ -50,3 +50,8 @@ realized it would only work for OR
 TODO
 I am thinking of adding a separate "suggestiosn" drop down from teh searchbox but that can wait as i can still demonstrate with
 next, visualize prefix search and check if searchstep is really necessary
+
+## prefix visualization
+
+added prefixsearchstep to get nodes properly highlighted. I knew this is how highlighting should have worked back then also, but maybe if i used my brains more than chatgpts, things would have been easier but well refactoring wasnt that hard anyways
+but yeah , if i dont plan out everything, tech debt is so real

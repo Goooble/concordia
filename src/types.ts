@@ -4,6 +4,12 @@ export type TrieJSON = {
   isWord: boolean;
   children: TrieJSON[];
 };
+export type TrieHighlightType = "prefix" | "visited" | "found";
+
+export type TrieStep = {
+  nodeId: number;
+  type: TrieHighlightType;
+};
 
 export interface TreeNodeProps {
   node: TrieJSON;
