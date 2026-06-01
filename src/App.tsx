@@ -1,6 +1,6 @@
 import "./App.css";
 import "@xyflow/react/dist/style.css";
-import documents from "./minisearch/ingestion/documents.json";
+// import documents from "./minisearch/ingestion/documents.json";
 import test from "./minisearch/ingestion/test.json";
 import { type Document } from "./types";
 
@@ -9,8 +9,8 @@ import { ReactFlow, Background, Controls } from "@xyflow/react";
 import removeMarkdown from "remove-markdown";
 import { Group, Panel, Separator } from "react-resizable-panels";
 
-import { main } from "./minisearch/trie/main";
-import { trieToFlow } from "./flow";
+// import { main } from "./minisearch/trie/main";
+import { buildFlowGraph } from "./flow";
 import { SearchEngine } from "./minisearch/search/engine";
 import CameraController from "./camera";
 
@@ -29,16 +29,34 @@ function App() {
   const [highlightedNodes, setHighlightedNodes] = useState<number[]>([]);
   const [found, setFound] = useState<boolean | null>(null);
   const [results, setResults] = useState<Document[]>([]); //invIndex
+  const [operator, setOperator] = useState<"AND" | "OR">("AND");
   //trie testing
   // engine.trie.insert("cat");
   // engine.trie.insert("car");
   // engine.trie.insert("cart");
-  const tree = useMemo(() => engine.trie.toJSON(), [engine.trie]);
 
-  const { nodes, edges } = useMemo(
-    () => trieToFlow(tree, highlightedNodes),
-    [tree, highlightedNodes],
+  // const tree = useMemo(() => engine.trie.toJSON(), [engine.trie]);
+
+  const baseGraph = useMemo(() => {
+    return buildFlowGraph(engine.trie.toJSON());
+  }, [engine.trie]);
+  const highlightedSet = useMemo(
+    () => new Set(highlightedNodes),
+    [highlightedNodes],
   );
+  const nodes = useMemo(() => {
+    return baseGraph.nodes.map((node) => ({
+      ...node,
+
+      style: {
+        ...node.style,
+
+        border: highlightedSet.has(Number(node.id))
+          ? "3px solid orange"
+          : "1px solid gray",
+      },
+    }));
+  }, [highlightedSet, baseGraph.nodes]);
 
   return (
     <div className="h-screen w-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
@@ -65,10 +83,29 @@ function App() {
                 const visited = [...engine.trie.searchSteps(value)];
                 setHighlightedNodes(visited);
                 setFound(engine.trie.search(value));
-                setResults(engine.search(value));
+                setResults(engine.search(value, operator));
               }}
               className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"
             />
+            <div className="flex gap-4 mt-2">
+              <label>
+                <input
+                  type="radio"
+                  checked={operator === "AND"}
+                  onChange={() => setOperator("AND")}
+                />
+                AND
+              </label>
+
+              <label>
+                <input
+                  type="radio"
+                  checked={operator === "OR"}
+                  onChange={() => setOperator("OR")}
+                />
+                OR
+              </label>
+            </div>
           </div>
 
           {/* Status Badge */}
@@ -115,16 +152,21 @@ function App() {
         {/* Resizable Separator Widget */}
         <Separator className="w-2 bg-slate-100 cursor-col-resize flex items-center justify-center transition-colors duration-150 hover:bg-indigo-100 active:bg-indigo-200">
           {/* Visual Grab Handle Accent line */}
-          <div className="w-[2px] h-8 bg-slate-300 rounded-full" />
+          <div className="w-0.5 h-8 bg-slate-300 rounded-full" />
         </Separator>
 
         {/* Right Flow Graph Panel */}
         <Panel className="relative bg-white">
           <div className="absolute inset-0 w-full h-full">
-            <ReactFlow nodes={nodes} edges={edges} fitView>
+            <ReactFlow
+              nodes={nodes}
+              edges={baseGraph.edges}
+              onlyRenderVisibleElements
+              fitView
+            >
               {/* Light grid background pattern */}
               <Background color="#cbd5e1" gap={20} size={1} />
-              <Controls className="!bg-white !border !border-slate-200 !rounded-lg !shadow-lg" />
+              <Controls className="bg-white! border! border-slate-200! rounded-lg! shadow-lg!" />
               <CameraController
                 highlightedNodes={highlightedNodes}
                 nodes={nodes}

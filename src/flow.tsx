@@ -4,7 +4,7 @@ import { type Edge, type Node } from "@xyflow/react";
 const NODE_WIDTH = 60;
 const NODE_HEIGHT = 60;
 
-export function trieToFlow(tree: any, highlightedNodes: number[]) {
+export function buildFlowGraph(tree: any) {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
@@ -13,14 +13,11 @@ export function trieToFlow(tree: any, highlightedNodes: number[]) {
 
     nodes.push({
       id,
-      position: { x: 0, y: 0 }, // dagre will overwrite
+      position: { x: 0, y: 0 },
       data: {
         label: node.label,
       },
       style: {
-        border: highlightedNodes.includes(node.id)
-          ? "3px solid orange"
-          : "1px solid gray",
         borderRadius: "50%",
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
@@ -47,7 +44,7 @@ export function trieToFlow(tree: any, highlightedNodes: number[]) {
   graph.setDefaultEdgeLabel(() => ({}));
 
   graph.setGraph({
-    rankdir: "TB", // Top -> Bottom
+    rankdir: "TB",
     ranksep: 10,
     nodesep: 10,
   });

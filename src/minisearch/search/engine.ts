@@ -60,7 +60,7 @@ export class SearchEngine {
    * Result:
    *   {1}
    */
-  search(query: string): Document[] {
+  search(query: string, operator: "AND" | "OR" = "AND"): Document[] {
     const tokens = tokenize(query);
 
     if (tokens.length === 0) {
@@ -69,13 +69,15 @@ export class SearchEngine {
 
     const postingLists = tokens.map((token) => this.index.get(token));
 
-    const matchingIds = this.intersect(postingLists);
+    const matchingIds =
+      operator === "AND"
+        ? this.intersect(postingLists)
+        : this.union(postingLists);
 
     return [...matchingIds]
       .map((id) => this.docs.get(id))
       .filter((doc): doc is Document => doc !== undefined);
   }
-
   /**
    * Set intersection.
    *
@@ -99,7 +101,17 @@ export class SearchEngine {
 
     return result;
   }
+  private union(sets: Set<string>[]): Set<string> {
+    const result = new Set<string>();
 
+    for (const set of sets) {
+      for (const id of set) {
+        result.add(id);
+      }
+    }
+
+    return result;
+  }
   /**
    * Useful for debugging.
    */
