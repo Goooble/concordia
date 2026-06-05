@@ -8,7 +8,7 @@ type Document = {
 };
 
 // 1. Anchor the path to this script's folder, then climb up to the 'data' folder
-const DATA_PATH = path.resolve(import.meta.dirname, "../../../data");
+const DATA_PATH = path.resolve(import.meta.dirname, "../../../public/data");
 
 // 2. Do the same for the output file so it writes to the right place too!
 const OUTPUT_PATH = path.resolve(import.meta.dirname, "./documents.json");
@@ -16,7 +16,7 @@ const OUTPUT_PATH = path.resolve(import.meta.dirname, "./documents.json");
 const docs: Document[] = [];
 
 // Target corpus size for development
-const MAX_WORDS = 1000000000000;
+const MAX_WORDS = 50000;
 
 let totalWords = 0;
 

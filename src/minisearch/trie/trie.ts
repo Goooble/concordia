@@ -151,7 +151,100 @@ export class Trie {
     node.isWord = true;
   }
   fuzzySearch(query: string, maxDistance = 2): string[] {
-    console.log("Fuzzy search results for trie not yet");
-    return [];
+    const results: string[] = [];
+
+    const qlen = query.length;
+    const initialRow = Array.from({ length: qlen + 1 }, (_, i) => i);
+
+    const updateRow = (prevRow: number[], ch: string): number[] => {
+      const row: number[] = [prevRow[0] + 1];
+      for (let i = 1; i <= qlen; i++) {
+        const insertCost = row[i - 1] + 1;
+        const deleteCost = prevRow[i] + 1;
+        const replaceCost = prevRow[i - 1] + (query[i - 1] === ch ? 0 : 1);
+        row[i] = Math.min(insertCost, deleteCost, replaceCost);
+      }
+      return row;
+    };
+
+    const dfs = (node: TrieNode, currentWord: string, prevRow: number[]) => {
+      for (const [ch, child] of node.children) {
+        const row = updateRow(prevRow, ch);
+
+        const dist = row[qlen];
+        if (child.isWord && dist <= maxDistance) {
+          results.push(currentWord + ch);
+        }
+
+        if (Math.min(...row) <= maxDistance) {
+          dfs(child, currentWord + ch, row);
+        }
+        // else prune
+      }
+    };
+
+    dfs(this.root, "", initialRow);
+
+    return results;
+  }
+  *fuzzySearchSteps(query: string, maxDistance = 2): Generator<TrieStep> {
+    const qlen = query.length;
+    const initialRow = Array.from({ length: qlen + 1 }, (_, i) => i);
+
+    const updateRow = (prevRow: number[], ch: string): number[] => {
+      const row: number[] = [prevRow[0] + 1];
+      for (let i = 1; i <= qlen; i++) {
+        const insertCost = row[i - 1] + 1;
+        const deleteCost = prevRow[i] + 1;
+        const replaceCost = prevRow[i - 1] + (query[i - 1] === ch ? 0 : 1);
+        row[i] = Math.min(insertCost, deleteCost, replaceCost);
+      }
+      return row;
+    };
+
+    function* dfs(
+      node: TrieNode,
+      currentWord: string,
+      prevRow: number[],
+    ): Generator<TrieStep> {
+      for (const [ch, child] of node.children) {
+        const row = updateRow(prevRow, ch);
+
+        // visited when we explore this child node
+        yield {
+          nodeId: child.id,
+          type: "visited",
+          dpRow: row.slice(),
+          distance: row[qlen],
+        };
+
+        // found word
+        if (child.isWord && row[qlen] <= maxDistance) {
+          yield {
+            nodeId: child.id,
+            type: "found",
+            distance: row[qlen],
+            dpRow: row.slice(),
+          };
+        }
+
+        // prune if minimum exceeds threshold
+        if (Math.min(...row) > maxDistance) {
+          yield { nodeId: child.id, type: "pruned", dpRow: row.slice() };
+          continue;
+        }
+
+        yield* dfs(child, currentWord + ch, row);
+      }
+    }
+
+    yield {
+      nodeId: this.root.id,
+      type: "visited",
+      dpRow: initialRow.slice(),
+      distance: initialRow[qlen],
+    };
+
+    yield* dfs(this.root, "", initialRow);
   }
 }

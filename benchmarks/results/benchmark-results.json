@@ -1,0 +1,279 @@
+{
+  "datasets": [
+    {
+      "datasetSize": 1000,
+      "compression": {
+        "compressionRatio": 0.5060240963855421,
+        "nodeReductionPercent": 49.397590361445786
+      },
+      "trie": {
+        "build": {
+          "meanMs": 0.10272347966310542,
+          "throughputOpsPerSec": 10034.877232541194,
+          "wordsPerSecond": 10034877.232541194
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.00013603612343846756,
+            "throughputOpsPerSec": 8788392.719654568,
+            "samples": 7350989
+          },
+          "nodesVisited": {
+            "average": 8.36,
+            "min": 2,
+            "max": 18,
+            "total": 1672
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.00922155206469901,
+            "throughputOpsPerSec": 792904.8824925844,
+            "samples": 108442
+          },
+          "nodesVisited": {
+            "average": 476.83,
+            "min": 5,
+            "max": 2068,
+            "total": 95366
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.02444463734141126,
+            "throughputOpsPerSec": 53640.147824648215,
+            "samples": 40909
+          },
+          "nodesVisited": {
+            "average": 264.875,
+            "min": 88,
+            "max": 406,
+            "total": 52975
+          },
+          "nodesPruned": {
+            "average": 177.9,
+            "min": 51,
+            "max": 275,
+            "total": 35580
+          },
+          "matchesFound": {
+            "average": 1.135,
+            "min": 0,
+            "max": 9,
+            "total": 227
+          },
+          "pruningPercentage": 40.17842019084185
+        },
+        "searchMiss": {
+          "time": {
+            "meanMs": 0.000047278089768821225,
+            "throughputOpsPerSec": 21975909.446683563,
+            "samples": 21151447
+          },
+          "nodesVisited": {
+            "average": 2.2,
+            "min": 1,
+            "max": 3,
+            "total": 11
+          }
+        },
+        "structure": {
+          "nodeCount": 2407,
+          "maxDepth": 20,
+          "averageDepth": 7.186539260490237,
+          "averageBranchingFactor": 1.4329958308516975,
+          "maxBranchingFactor": 31
+        }
+      },
+      "radix": {
+        "build": {
+          "meanMs": 0.20002403780000147,
+          "throughputOpsPerSec": 5033.851758752177,
+          "wordsPerSecond": 5033851.7587521775
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.000257681172655515,
+            "throughputOpsPerSec": 4611971.432189947,
+            "samples": 3880765
+          },
+          "nodesVisited": {
+            "average": 6.74,
+            "min": 2,
+            "max": 11,
+            "total": 1348
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.0038360187732567,
+            "throughputOpsPerSec": 959123.5337489578,
+            "samples": 260690
+          },
+          "nodesVisited": {
+            "average": 243.405,
+            "min": 4,
+            "max": 1047,
+            "total": 48681
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.036510182621397734,
+            "throughputOpsPerSec": 36893.41726321157,
+            "samples": 27390
+          },
+          "nodesVisited": {
+            "average": 240.96,
+            "min": 85,
+            "max": 371,
+            "total": 48192
+          },
+          "nodesPruned": {
+            "average": 177.9,
+            "min": 51,
+            "max": 275,
+            "total": 35580
+          },
+          "matchesFound": {
+            "average": 1.135,
+            "min": 0,
+            "max": 9,
+            "total": 227
+          },
+          "pruningPercentage": 42.4724251539894
+        },
+        "searchMiss": {
+          "time": {
+            "meanMs": 0.00012686721582467838,
+            "throughputOpsPerSec": 8414511.32682616,
+            "samples": 7882257
+          },
+          "nodesVisited": {
+            "average": 2.2,
+            "min": 1,
+            "max": 3,
+            "total": 11
+          }
+        },
+        "structure": {
+          "nodeCount": 1218,
+          "maxDepth": 11,
+          "averageDepth": 5.653530377668309,
+          "averageBranchingFactor": 2.483673469387755,
+          "maxBranchingFactor": 31
+        }
+      },
+      "worstCase": {
+        "trie": {
+          "longest": {
+            "time": {
+              "meanMs": 0.00022412501086759812,
+              "throughputOpsPerSec": 4495389.972763058,
+              "samples": 4461796
+            },
+            "nodesVisited": {
+              "average": 21,
+              "min": 21,
+              "max": 21,
+              "total": 21
+            }
+          },
+          "shortest": {
+            "time": {
+              "meanMs": 0.00003425816814937158,
+              "throughputOpsPerSec": 30386533.863468673,
+              "samples": 29190119
+            },
+            "nodesVisited": {
+              "average": 2,
+              "min": 2,
+              "max": 2,
+              "total": 2
+            }
+          },
+          "random": {
+            "time": {
+              "meanMs": 0.00005705361704747242,
+              "throughputOpsPerSec": 17953713.279254135,
+              "samples": 17527373
+            },
+            "nodesVisited": {
+              "average": 5,
+              "min": 5,
+              "max": 5,
+              "total": 5
+            }
+          },
+          "missing": {
+            "time": {
+              "meanMs": 0.000032731633798622,
+              "throughputOpsPerSec": 31699899.03767122,
+              "samples": 30551485
+            },
+            "nodesVisited": {
+              "average": 1,
+              "min": 1,
+              "max": 1,
+              "total": 1
+            }
+          }
+        },
+        "radix": {
+          "longest": {
+            "time": {
+              "meanMs": 0.0003407219419808288,
+              "throughputOpsPerSec": 3069822.877488389,
+              "samples": 2934945
+            },
+            "nodesVisited": {
+              "average": 10,
+              "min": 10,
+              "max": 10,
+              "total": 10
+            }
+          },
+          "shortest": {
+            "time": {
+              "meanMs": 0.000037879655617461377,
+              "throughputOpsPerSec": 29374184.24212627,
+              "samples": 26399396
+            },
+            "nodesVisited": {
+              "average": 2,
+              "min": 2,
+              "max": 2,
+              "total": 2
+            }
+          },
+          "random": {
+            "time": {
+              "meanMs": 0.00020796414449516983,
+              "throughputOpsPerSec": 4942445.919506664,
+              "samples": 4808522
+            },
+            "nodesVisited": {
+              "average": 5,
+              "min": 5,
+              "max": 5,
+              "total": 5
+            }
+          },
+          "missing": {
+            "time": {
+              "meanMs": 0.00012143347206771927,
+              "throughputOpsPerSec": 8384731.256580163,
+              "samples": 8234962
+            },
+            "nodesVisited": {
+              "average": 1,
+              "min": 1,
+              "max": 1,
+              "total": 1
+            }
+          }
+        }
+      }
+    }
+  ]
+}

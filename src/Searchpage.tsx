@@ -654,7 +654,7 @@ function Searchpage() {
                   )}
                   {/* Current step info panel */}
                   {currentStep && (
-                    <div className="absolute left-4 bottom-4 bg-white border border-slate-200 rounded-lg p-3 shadow-lg text-xs text-slate-700">
+                    <div className="absolute right-4 bottom-4 bg-white border border-slate-200 rounded-lg p-3 shadow-lg text-xs text-slate-700">
                       <div className="font-semibold mb-1">Current Step</div>
                       <div className="flex gap-2">
                         <div className="text-slate-500">node:</div>
