@@ -1,12 +1,25 @@
 import dagre from "dagre";
 import { type Edge, type Node } from "@xyflow/react";
 
-const NODE_SIZE = 44;
-
+const NODE_HEIGHT = 44;
 // High-saturation minimalist colors (Electric Violet, Cyber Teal, Neon Tangerine, Acid Lime)
 const VIBRANT_PALETTE = ["#6366f1", "#06b6d4", "#f97316", "#10b981"];
 
-export function buildFlowGraph(tree: any) {
+function getNodeWidth(label: string) {
+  const CHAR_WIDTH = 9; // roughly 9px per character
+  const PADDING = 32; // extra padding for text breathing room
+  return Math.max(60, label.length * CHAR_WIDTH + PADDING);
+}
+
+interface GraphConfig {
+  ranksep: number;
+  nodesep: number;
+}
+
+export function buildFlowGraph(
+  tree: any,
+  config: GraphConfig = { ranksep: 45, nodesep: 35 },
+) {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
@@ -15,6 +28,7 @@ export function buildFlowGraph(tree: any) {
 
     // Assign a pure, flat vibrant accent color based on tree layer
     const accentColor = VIBRANT_PALETTE[depth % VIBRANT_PALETTE.length];
+    const width = getNodeWidth(node.label);
 
     nodes.push({
       id,
@@ -22,8 +36,8 @@ export function buildFlowGraph(tree: any) {
       data: { label: node.label },
       // Minimalist Frame + Saturated Color Core
       style: {
-        width: NODE_SIZE,
-        height: NODE_SIZE,
+        width: width, // FIX: Use the calculated dynamic width instead of static NODE_SIZE
+        height: NODE_HEIGHT,
         borderRadius: "12px", // Sleek, modern rounded squares
         backgroundColor: "#ffffff",
         border: `3px solid ${accentColor}`, // The pop of color comes entirely from a thick, crisp border
@@ -69,17 +83,18 @@ export function buildFlowGraph(tree: any) {
   const graph = new dagre.graphlib.Graph();
   graph.setDefaultEdgeLabel(() => ({}));
 
-  // LAYOUT ENGINE TUNING: Perfectly uniform grid spacing
+  // LAYOUT ENGINE TUNING: Controlled dynamically by your new App.tsx sliders
   graph.setGraph({
     rankdir: "TB",
-    ranksep: 45,
-    nodesep: 35,
+    ranksep: config.ranksep,
+    nodesep: config.nodesep,
   });
 
+  // Pass exact calculated node dimensions down to Dagre engine
   nodes.forEach((node) => {
     graph.setNode(node.id, {
-      width: NODE_SIZE,
-      height: NODE_SIZE,
+      width: Number(node.style?.width) || 60,
+      height: NODE_HEIGHT,
     });
   });
 
@@ -89,11 +104,14 @@ export function buildFlowGraph(tree: any) {
 
   dagre.layout(graph);
 
+  // Re-map node coordinates based on Dagre calculation updates
   nodes.forEach((node) => {
     const pos = graph.node(node.id);
+    const nodeWidth = Number(node.style?.width) || 60;
+
     node.position = {
-      x: pos.x - NODE_SIZE / 2,
-      y: pos.y - NODE_SIZE / 2,
+      x: pos.x - nodeWidth / 2,
+      y: pos.y - NODE_HEIGHT / 2,
     };
   });
 

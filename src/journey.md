@@ -55,3 +55,7 @@ next, visualize prefix search and check if searchstep is really necessary
 
 added prefixsearchstep to get nodes properly highlighted. I knew this is how highlighting should have worked back then also, but maybe if i used my brains more than chatgpts, things would have been easier but well refactoring wasnt that hard anyways
 but yeah , if i dont plan out everything, tech debt is so real
+
+## animation
+
+animations are hereeee! it wasnt that hard, quite fun fixing async issues(didnt fix everything yet lol)

@@ -1,6 +1,11 @@
 import "./App.css";
 import "@xyflow/react/dist/style.css";
+
 import documents from "./minisearch/ingestion/documents.json";
+import documents2k from "./minisearch/ingestion/documents2k.json";
+import documents5k from "./minisearch/ingestion/documents5k.json";
+import documents10k from "./minisearch/ingestion/documents10k.json";
+
 import test from "./minisearch/ingestion/test.json";
 import { type Document } from "./types";
 import { type TrieStep } from "./types";
@@ -24,7 +29,7 @@ function App() {
   const engine = useMemo(() => {
     const e = new SearchEngine();
 
-    e.addAll(test);
+    e.addAll(documents2k);
 
     return e;
   }, []);
@@ -36,13 +41,25 @@ function App() {
     new Map(),
   );
   const [results, setResults] = useState<Document[]>([]); //invIndex
-  const [operator, setOperator] = useState<"AND" | "OR">("AND");
-  const [visualize, setVisualize] = useState(Boolean(false));
+  const [operator, setOperator] = useState<"AND" | "OR">("OR");
+  const [visualize, setVisualize] = useState(Boolean(true));
   const [camera, setCamera] = useState(Boolean(true));
   const [animate, setAnimate] = useState(Boolean(false));
+
+  // NEW: Layout Spacing States
+  const [ranksep, setRanksep] = useState(45); // Vertical gaps
+  const [nodesep, setNodesep] = useState(15); // Horizontal gaps
+
   const [currentNode, setCurrentNode] = useState<number | null>(null);
+  const [isRadix, setIsRadix] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]); //trie suggestions for current query
   //use suggestions to show possible completions of the current query based on the trie contents
+  let tree;
+  if (isRadix) {
+    tree = engine.radix;
+  } else {
+    tree = engine.trie;
+  }
   const baseGraph = useMemo(() => {
     if (!visualize) {
       return {
@@ -51,12 +68,9 @@ function App() {
       };
     }
 
-    return buildFlowGraph(engine.trie.toJSON());
-  }, [engine.trie, visualize]);
-  // const highlightedSet = useMemo(
-  //   () => new Set(highlightedNodes),
-  //   [highlightedNodes],
-  // );
+    return buildFlowGraph(tree.toJSON(), { ranksep, nodesep });
+  }, [visualize, tree, ranksep, nodesep]); // Rebuild graph if visualization toggled or tree changes or layout parameters change
+
   const nodes = useMemo(() => {
     return baseGraph.nodes.map((node) => {
       const state = highlights.get(Number(node.id));
@@ -108,7 +122,7 @@ function App() {
       };
     });
   }, [highlights, baseGraph.nodes]); // Included highlights in the dependency array
-  console.log(highlights);
+
   const animationId = useRef(0);
   async function animateSteps(steps: TrieStep[]) {
     const id = ++animationId.current; //cancelling aniamtion
@@ -139,67 +153,116 @@ function App() {
           className="overflow-y-auto border-r border-slate-200 bg-white p-6 shadow-xl flex flex-col"
         >
           {/* title */}
-          <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
-            <h2 className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              MiniSearch
-            </h2>
-            <div>
-              <label className="flex items-center gap-3 cursor-pointer select-none group">
+          <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-slate-100">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                MiniSearch
+              </h2>
+            </div>
+
+            {/* Toggles Grid */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <label className="flex items-center justify-between cursor-pointer select-none group">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
                   Visualize
                 </span>
-
-                {/* Sexy Custom Switch Toggle Container */}
                 <div className="relative">
                   <input
                     type="checkbox"
                     checked={visualize === true}
                     onChange={() => setVisualize(!visualize)}
-                    className="sr-only peer" // Hides the default ugly checkbox completely
+                    className="sr-only peer"
                   />
-
-                  {/* Switch Background track */}
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
                 </div>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer select-none group">
+
+              <label className="flex items-center justify-between cursor-pointer select-none group">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
                   Camera
                 </span>
-
-                {/* Sexy Custom Switch Toggle Container */}
                 <div className="relative">
                   <input
                     type="checkbox"
                     checked={camera === true}
                     onChange={() => setCamera(!camera)}
-                    className="sr-only peer" // Hides the default ugly checkbox completely
+                    className="sr-only peer"
                   />
-
-                  {/* Switch Background track */}
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
                 </div>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer select-none group">
+
+              <label className="flex items-center justify-between cursor-pointer select-none group">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
                   Animation
                 </span>
-
-                {/* Sexy Custom Switch Toggle Container */}
                 <div className="relative">
                   <input
                     type="checkbox"
                     checked={animate === true}
                     onChange={() => setAnimate(!animate)}
-                    className="sr-only peer" // Hides the default ugly checkbox completely
+                    className="sr-only peer"
                   />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                </div>
+              </label>
 
-                  {/* Switch Background track */}
+              <label className="flex items-center justify-between cursor-pointer select-none group">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                  Radix
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isRadix === true}
+                    onChange={() => setIsRadix(!isRadix)}
+                    className="sr-only peer"
+                  />
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
                 </div>
               </label>
             </div>
+
+            {/* NEW: Sliders for Graph Layout Gaps (Visible only if visualization is enabled) */}
+            {visualize && (
+              <div className="mt-2 space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Vertical Gap</span>
+                    <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-mono">
+                      {ranksep}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="180"
+                    value={ranksep}
+                    onChange={(e) => setRanksep(Number(e.target.value))}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-indigo-600 hover:bg-slate-200 transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Horizontal Gap</span>
+                    <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-mono">
+                      {nodesep}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="15"
+                    max="150"
+                    value={nodesep}
+                    onChange={(e) => setNodesep(Number(e.target.value))}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-indigo-600 hover:bg-slate-200 transition-colors"
+                  />
+                </div>
+              </div>
+            )}
           </div>
+
           {/* Search Input Container */}
           <div className="relative group shrink-0">
             <input
@@ -213,15 +276,16 @@ function App() {
                 let triesuggest = "";
                 const allSteps = [];
                 words.forEach(async (word) => {
-                  triesuggest += " " + engine.trie.prefixSearch(word).join(" ");
-                  //highlights
+                  triesuggest += " " + tree.prefixSearch(word).join(" ");
+
+                  //animation
                   for (const word of words) {
-                    allSteps.push(...engine.trie.prefixSearchSteps(word));
+                    allSteps.push(...tree.prefixSearchSteps(word));
                   }
                   if (animate) {
                     await animateSteps(allSteps);
                   } else {
-                    for (const step of engine.trie.prefixSearchSteps(word)) {
+                    for (const step of tree.prefixSearchSteps(word)) {
                       map.set(step.nodeId, step.type);
                     }
                   }
@@ -233,21 +297,23 @@ function App() {
               }}
               className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"
             />
-            <div className="flex gap-4 mt-2">
-              <label>
+            <div className="flex gap-4 mt-2 text-sm font-semibold text-slate-600">
+              <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="radio"
                   checked={operator === "AND"}
                   onChange={() => setOperator("AND")}
+                  className="accent-indigo-600"
                 />
                 AND
               </label>
 
-              <label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="radio"
                   checked={operator === "OR"}
                   onChange={() => setOperator("OR")}
+                  className="accent-indigo-600"
                 />
                 OR
               </label>

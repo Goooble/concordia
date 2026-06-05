@@ -2,10 +2,11 @@ import { InvertedIndex } from "./invIndex";
 import { tokenize } from "../ingestion/tokenizer";
 import { Trie } from "../trie/trie";
 import { type Document } from "../../types";
+import { Radix } from "../trie/radix";
 export class SearchEngine {
   private docs = new Map<string, Document>();
   private index = new InvertedIndex();
-
+  radix = new Radix();
   trie = new Trie();
 
   /**
@@ -31,6 +32,7 @@ export class SearchEngine {
     for (const token of uniqueTokens) {
       this.index.add(token, doc.id);
       this.trie.insert(token);
+      this.radix.insert(token);
     }
   }
 

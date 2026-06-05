@@ -1,5 +1,6 @@
 import { type TrieJSON } from "../../types";
 import { type TrieStep } from "../../types";
+
 export class TrieNode {
   id: number; //useful for react later
   children = new Map<string, TrieNode>();
