@@ -41,6 +41,7 @@ function Searchpage() {
   const [visualize, setVisualize] = useState(Boolean(true));
   const [camera, setCamera] = useState(Boolean(true));
   const [animate, setAnimate] = useState(Boolean(false));
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // NEW: Layout Spacing States
   const [ranksep, setRanksep] = useState(45); // Vertical gaps
@@ -218,7 +219,7 @@ function Searchpage() {
               </label>
             </div>
 
-            {/* NEW: Sliders for Graph Layout Gaps (Visible only if visualization is enabled) */}
+            {/* Sliders for Graph Layout Gaps */}
             {visualize && (
               <div className="mt-2 space-y-4 pt-4 border-t border-slate-100">
                 <div className="flex flex-col gap-1.5">
@@ -275,6 +276,12 @@ function Searchpage() {
 
                   //animation
                   for (const word of words) {
+                    setSuggestions(
+                      tree
+                        .fuzzySearch(word, 1)
+                        .filter((word) => word.length > 1),
+                    );
+                    console.log(suggestions);
                     allSteps.push(...tree.prefixSearchSteps(word));
                   }
                   if (animate) {
@@ -288,7 +295,6 @@ function Searchpage() {
                 setHighlights(map);
                 console.log(triesuggest);
                 setResults(engine.search(triesuggest, operator));
-                console.log(engine.search(triesuggest, operator));
               }}
               className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"
             />
@@ -315,13 +321,35 @@ function Searchpage() {
             </div>
           </div>
 
+          {/* UPDATED: "Did you mean?" Inline Tag Configuration */}
+          {query.trim() !== "" && suggestions.length > 0 && (
+            <div className="mt-5 flex flex-col shrink-0">
+              <h3 className="mb-2 text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                Did you mean ({suggestions.length})
+              </h3>
+
+              {/* Row/Wrap containment layout handles long structures like tag lists elegantly */}
+              <div className="flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
+                {suggestions.map((word, idx) => (
+                  <button
+                    key={`${idx}`}
+                    onClick={() => setQuery(word)}
+                    className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors border border-transparent hover:border-indigo-200/60 cursor-pointer max-w-[180px] truncate"
+                  >
+                    {word}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Results List */}
-          <div className="mt-8 flex-1 flex flex-col min-h-0">
-            <h3 className="mb-4 text-xs font-bold tracking-widest text-slate-400 uppercase shrink-0">
+          <div className="mt-6 flex-1 flex flex-col min-h-0">
+            <h3 className="mb-3 text-[11px] font-bold tracking-widest text-slate-400 uppercase shrink-0">
               Results ({results.length})
             </h3>
 
-            <div className="space-y-4 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+            <div className="space-y-3 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-4">
               {results.map((doc) => {
                 const snippets = getSnippets(doc.content, query);
 
@@ -329,16 +357,16 @@ function Searchpage() {
                   <Link
                     key={doc.id}
                     to={`/docs/${encodeURIComponent(doc.id)}`}
-                    className="block cursor-pointer rounded-2xl border border-slate-100 bg-white p-5 transition duration-200 hover:border-indigo-400 hover:bg-slate-50/50 hover:shadow-md group"
+                    className="block rounded-xl border border-slate-100 bg-white p-4 transition duration-200 hover:border-indigo-400 hover:bg-slate-50/50 hover:shadow-xs group"
                   >
-                    <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="font-bold text-sm text-slate-900 group-hover:text-indigo-600 transition-colors">
                       {doc.title}
                     </h3>
 
                     {snippets.map((snippet, idx) => (
                       <p
                         key={idx}
-                        className="mt-2 text-sm text-slate-500 leading-relaxed"
+                        className="mt-1.5 text-xs text-slate-500 leading-relaxed max-h-24 overflow-hidden text-ellipsis"
                       >
                         <HighlightedText text={snippet} query={query} />
                       </p>

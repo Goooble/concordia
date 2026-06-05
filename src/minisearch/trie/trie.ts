@@ -150,4 +150,8 @@ export class Trie {
     // Mark the final node as the end of a word
     node.isWord = true;
   }
+  fuzzySearch(query: string, maxDistance = 2): string[] {
+    console.log("Fuzzy search results for trie not yet");
+    return [];
+  }
 }

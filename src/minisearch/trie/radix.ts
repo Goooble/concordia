@@ -229,4 +229,52 @@ export class Radix {
     // remainder empty -> mark node as word
     node.isWord = true;
   }
+  private updateRow(prevRow: number[], ch: string, query: string): number[] {
+    const row = [prevRow[0] + 1];
+
+    for (let i = 1; i <= query.length; i++) {
+      const insertCost = row[i - 1] + 1;
+      const deleteCost = prevRow[i] + 1;
+      const replaceCost = prevRow[i - 1] + (query[i - 1] === ch ? 0 : 1);
+
+      row[i] = Math.min(insertCost, deleteCost, replaceCost);
+    }
+
+    return row;
+  }
+  fuzzySearch(query: string, maxDistance = 2): string[] {
+    const results: string[] = [];
+
+    const initialRow = Array.from({ length: query.length + 1 }, (_, i) => i);
+
+    const dfs = (node: RadixNode, currentWord: string, row: number[]) => {
+      let currentRow = row;
+
+      // Process entire edge
+      for (const ch of node.edge) {
+        currentRow = this.updateRow(currentRow, ch, query);
+      }
+
+      // Word found
+      if (node.isWord && currentRow[query.length] <= maxDistance) {
+        results.push(currentWord);
+      }
+
+      // Prune branch
+      if (Math.min(...currentRow) > maxDistance) {
+        return;
+      }
+
+      for (const child of node.children) {
+        dfs(child, currentWord + child.edge, currentRow);
+      }
+    };
+
+    for (const child of this.root.children) {
+      dfs(child, child.edge, initialRow);
+    }
+
+    return results;
+    console.log("Fuzzy search results for", query, ":", results);
+  }
 }
