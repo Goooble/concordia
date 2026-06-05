@@ -277,4 +277,62 @@ export class Radix {
     return results;
     console.log("Fuzzy search results for", query, ":", results);
   }
+
+  *fuzzySearchSteps(query: string, maxDistance = 2): Generator<TrieStep> {
+    const initialRow = Array.from({ length: query.length + 1 }, (_, i) => i);
+
+    // yield visited for root
+    yield {
+      nodeId: this.root.id,
+      type: "visited",
+      dpRow: initialRow.slice(),
+      distance: initialRow[query.length],
+    };
+
+    function* dfs(
+      this: Radix,
+      node: RadixNode,
+      currentWord: string,
+      row: number[],
+    ): Generator<TrieStep> {
+      let currentRow = row;
+
+      // Process entire edge
+      for (const ch of node.edge) {
+        currentRow = this.updateRow(currentRow, ch, query);
+      }
+
+      // We explored this node
+      yield {
+        nodeId: node.id,
+        type: "visited",
+        dpRow: currentRow.slice(),
+        distance: currentRow[query.length],
+      };
+
+      // Word found
+      if (node.isWord && currentRow[query.length] <= maxDistance) {
+        yield {
+          nodeId: node.id,
+          type: "found",
+          distance: currentRow[query.length],
+          dpRow: currentRow.slice(),
+        };
+      }
+
+      // Prune branch if minimum in row exceeds threshold
+      if (Math.min(...currentRow) > maxDistance) {
+        yield { nodeId: node.id, type: "pruned", dpRow: currentRow.slice() };
+        return;
+      }
+
+      for (const child of node.children) {
+        yield* dfs.call(this, child, currentWord + child.edge, currentRow);
+      }
+    }
+
+    for (const child of this.root.children) {
+      yield* dfs.call(this, child, child.edge, initialRow);
+    }
+  }
 }

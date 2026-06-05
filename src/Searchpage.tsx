@@ -8,7 +8,7 @@ import { type Document } from "./types";
 import { type TrieStep } from "./types";
 import { type TrieHighlightType } from "./types";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router";
 import { ReactFlow, Background, Controls } from "@xyflow/react";
 
@@ -25,7 +25,7 @@ function Searchpage() {
   const engine = useMemo(() => {
     const e = new SearchEngine();
 
-    e.addAll(documents10k);
+    e.addAll(test);
 
     return e;
   }, []);
@@ -42,12 +42,15 @@ function Searchpage() {
   const [camera, setCamera] = useState(Boolean(true));
   const [animate, setAnimate] = useState(Boolean(false));
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [fuzzyMode, setFuzzyMode] = useState<boolean>(false);
+  const [maxDistance, setMaxDistance] = useState<number>(1);
 
   // NEW: Layout Spacing States
   const [ranksep, setRanksep] = useState(45); // Vertical gaps
   const [nodesep, setNodesep] = useState(15); // Horizontal gaps
 
   const [currentNode, setCurrentNode] = useState<number | null>(null);
+  const [currentStep, setCurrentStep] = useState<TrieStep | null>(null);
   const [isRadix, setIsRadix] = useState(true);
   //use suggestions to show possible completions of the current query based on the trie contents
   let tree;
@@ -70,6 +73,8 @@ function Searchpage() {
   const nodes = useMemo(() => {
     return baseGraph.nodes.map((node) => {
       const state = highlights.get(Number(node.id));
+      const nodeData: any = node.data ?? {};
+      const isWordNode = Boolean(nodeData.isWord);
 
       // Default fallback state (Clean and quiet)
       let backgroundColor = "#ffffff";
@@ -91,18 +96,30 @@ function Searchpage() {
         };
       }
       if (state === "prefix") {
-        backgroundColor = "#6366f1"; // Vibrant Indigo
+        backgroundColor = "#6366f1"; // Vibrant Indigo (existing prefix color)
         color = "#ffffff";
       }
 
       if (state === "visited") {
-        backgroundColor = "#10b981"; // Vibrant Emerald Green
+        backgroundColor = "#3b82f6"; // Blue
         color = "#ffffff";
       }
 
       if (state === "found") {
-        backgroundColor = "#f97316"; // Vibrant Neon Orange
+        backgroundColor = "#10b981"; // Green
         color = "#ffffff";
+      }
+
+      if (state === "pruned") {
+        backgroundColor = "#ef4444"; // Red
+        color = "#ffffff";
+      }
+
+      // If the node represents the end of a word and is not currently highlighted,
+      // tint the label with a distinct accent and slightly increase weight.
+      if (!state && isWordNode) {
+        color = "#7c3aed"; // Word accent (purple)
+        fontWeight = "800";
       }
 
       return {
@@ -129,15 +146,59 @@ function Searchpage() {
         return;
       }
       setCurrentNode(step.nodeId);
+      setCurrentStep(step);
 
-      map.set(step.nodeId, step.type);
+      map.set(step.nodeId, step.type as TrieHighlightType);
       setHighlights(new Map(map));
 
       await sleep(50);
     }
 
     setCurrentNode(null);
+    setCurrentStep(null);
   }
+
+  // Apply steps[0..currentStepIndex-1] to compute highlights and current step/node
+  function applyStepsToHighlights(index: number) {
+    const map = new Map<number, TrieHighlightType>();
+    for (let i = 0; i < index && i < steps.length; i++) {
+      const step = steps[i];
+      map.set(step.nodeId, step.type as TrieHighlightType);
+    }
+    setHighlights(map);
+
+    if (index > 0 && steps.length >= 1) {
+      const cur = steps[Math.min(index - 1, steps.length - 1)];
+      setCurrentNode(cur.nodeId);
+      setCurrentStep(cur);
+    } else {
+      setCurrentNode(null);
+      setCurrentStep(null);
+    }
+  }
+
+  // When index or steps change, recompute highlights
+  useEffect(() => {
+    applyStepsToHighlights(currentStepIndex);
+  }, [currentStepIndex, steps]);
+
+  // Playback loop: advance while playing, respecting playbackSpeed
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (currentStepIndex >= steps.length) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const BASE_DELAY = 200; // ms at 1x
+    const delay = Math.max(10, Math.floor(BASE_DELAY / playbackSpeed));
+
+    const timer = setTimeout(() => {
+      setCurrentStepIndex((i) => Math.min(i + 1, steps.length));
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentStepIndex, playbackSpeed, steps.length]);
   return (
     <div className="h-screen w-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
       <Group orientation="horizontal">
@@ -217,6 +278,116 @@ function Searchpage() {
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
                 </div>
               </label>
+
+              <label className="flex items-center justify-between cursor-pointer select-none group">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                  Fuzzy
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={fuzzyMode === true}
+                    onChange={() => setFuzzyMode(!fuzzyMode)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                </div>
+              </label>
+            </div>
+
+            {/* Playback Controls */}
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <button
+                  title="Reset"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setCurrentStepIndex(0);
+                  }}
+                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
+                >
+                  ⏮
+                </button>
+
+                <button
+                  title="Step Back"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setCurrentStepIndex((i) => Math.max(0, i - 1));
+                  }}
+                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
+                >
+                  ◀
+                </button>
+
+                <button
+                  title={isPlaying ? "Pause" : "Play"}
+                  onClick={() => {
+                    if (isPlaying) setIsPlaying(false);
+                    else {
+                      // if at end, jump to start
+                      if (currentStepIndex >= steps.length) setCurrentStepIndex(0);
+                      setIsPlaying(true);
+                    }
+                  }}
+                  className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  {isPlaying ? "⏸" : "▶"}
+                </button>
+
+                <button
+                  title="Step Forward"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setCurrentStepIndex((i) => Math.min(steps.length, i + 1));
+                  }}
+                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
+                >
+                  ▶
+                </button>
+
+                <button
+                  title="Jump to End"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setCurrentStepIndex(steps.length);
+                  }}
+                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
+                >
+                  ⏭
+                </button>
+
+                <div className="ml-3 flex items-center gap-2 text-sm text-slate-500">
+                  <span>Speed:</span>
+                  <select
+                    value={playbackSpeed}
+                    onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                    className="text-sm rounded border border-slate-200 bg-white px-2 py-0.5"
+                  >
+                    <option value={0.25}>0.25x</option>
+                    <option value={0.5}>0.5x</option>
+                    <option value={1}>1x</option>
+                    <option value={2}>2x</option>
+                    <option value={4}>4x</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Timeline Slider */}
+              <div className="mt-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={steps.length}
+                  value={currentStepIndex}
+                  onChange={(e) => {
+                    setIsPlaying(false);
+                    setCurrentStepIndex(Number(e.target.value));
+                  }}
+                  className="w-full"
+                />
+                <div className="text-xs text-slate-400 mt-1">Step {currentStepIndex} / {steps.length}</div>
+              </div>
             </div>
 
             {/* Sliders for Graph Layout Gaps */}
@@ -255,6 +426,22 @@ function Searchpage() {
                     className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-indigo-600 hover:bg-slate-200 transition-colors"
                   />
                 </div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Fuzzy Max Dist</span>
+                    <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-mono">
+                      {maxDistance}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="3"
+                    value={maxDistance}
+                    onChange={(e) => setMaxDistance(Number(e.target.value))}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-indigo-600 hover:bg-slate-200 transition-colors"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -264,36 +451,44 @@ function Searchpage() {
             <input
               value={query}
               placeholder="Search..."
-              onChange={(e) => {
+              onChange={async (e) => {
                 const value = e.target.value;
                 setQuery(value);
-                const map = new Map<number, TrieHighlightType>();
+
                 const words = value.toLowerCase().split(/\s+/).filter(Boolean);
-                let triesuggest = "";
+                const previewMap = new Map<number, TrieHighlightType>();
                 const allSteps: TrieStep[] = [];
-                words.forEach(async (word) => {
+                let triesuggest = "";
+
+                for (const word of words) {
+                  // suggestions (did-you-mean) use fuzzySearch quick API when available
+                  setSuggestions(
+                    (tree as any).fuzzySearch
+                      ? (tree as any).fuzzySearch(word, maxDistance).filter((w: string) => w.length > 1)
+                      : [],
+                  );
+
                   triesuggest += " " + tree.prefixSearch(word).join(" ");
 
-                  //animation
-                  for (const word of words) {
-                    setSuggestions(
-                      tree
-                        .fuzzySearch(word, 1)
-                        .filter((word) => word.length > 1),
-                    );
-                    console.log(suggestions);
-                    allSteps.push(...tree.prefixSearchSteps(word));
-                  }
-                  if (animate) {
-                    await animateSteps(allSteps);
+                  // build steps from appropriate generator
+                  if (fuzzyMode && (tree as any).fuzzySearchSteps) {
+                    for (const step of (tree as any).fuzzySearchSteps(word, maxDistance) as Generator<TrieStep>) {
+                      allSteps.push(step);
+                      if (!animate) previewMap.set(step.nodeId, step.type as TrieHighlightType);
+                    }
                   } else {
                     for (const step of tree.prefixSearchSteps(word)) {
-                      map.set(step.nodeId, step.type);
+                      allSteps.push(step);
+                      if (!animate) previewMap.set(step.nodeId, step.type as TrieHighlightType);
                     }
                   }
-                });
-                setHighlights(map);
-                console.log(triesuggest);
+                }
+
+                setHighlights(previewMap);
+                setSteps(allSteps);
+                setCurrentStepIndex(0);
+                if (animate && allSteps.length > 0) setIsPlaying(true);
+
                 setResults(engine.search(triesuggest, operator));
               }}
               className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"
@@ -400,6 +595,28 @@ function Searchpage() {
                       highlightedNodes={[...highlights.keys()]}
                       nodes={nodes}
                     />
+                  )}
+                  {/* Current step info panel */}
+                  {currentStep && (
+                    <div className="absolute left-4 bottom-4 bg-white border border-slate-200 rounded-lg p-3 shadow-lg text-xs text-slate-700">
+                      <div className="font-semibold mb-1">Current Step</div>
+                      <div className="flex gap-2">
+                        <div className="text-slate-500">node:</div>
+                        <div>{currentStep.nodeId}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="text-slate-500">type:</div>
+                        <div>{currentStep.type}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="text-slate-500">distance:</div>
+                        <div>{currentStep.distance ?? "-"}</div>
+                      </div>
+                      <div className="mt-2 text-[11px] text-slate-500">
+                        DP Row:{" "}
+                        {currentStep.dpRow ? currentStep.dpRow.join(", ") : "-"}
+                      </div>
+                    </div>
                   )}
                 </ReactFlow>
               </div>

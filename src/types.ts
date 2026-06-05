@@ -4,11 +4,14 @@ export type TrieJSON = {
   isWord: boolean;
   children: TrieJSON[];
 };
-export type TrieHighlightType = "prefix" | "visited" | "found";
+export type TrieHighlightType = "prefix" | "visited" | "found" | "pruned";
 
 export type TrieStep = {
   nodeId: number;
-  type: TrieHighlightType;
+  type: "visited" | "found" | "prefix" | "pruned";
+
+  distance?: number;
+  dpRow?: number[];
 };
 
 export interface TreeNodeProps {

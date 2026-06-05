@@ -31,7 +31,7 @@ export function buildFlowGraph(
     nodes.push({
       id,
       position: { x: 0, y: 0 },
-      data: { label: node.label },
+      data: { label: node.label, isWord: node.isWord },
       style: {
         width: width,
         height: NODE_HEIGHT,
