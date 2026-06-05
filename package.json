@@ -12,12 +12,14 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/vite": "^4.3.0",
+    "@types/react-router": "^5.1.20",
     "@xyflow/react": "^12.10.2",
     "dagre": "^0.8.5",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.11.2",
+    "react-router": "^7.17.0",
     "remove-markdown": "^0.6.4"
   },
   "devDependencies": {

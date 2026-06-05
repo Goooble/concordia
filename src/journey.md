@@ -59,3 +59,8 @@ but yeah , if i dont plan out everything, tech debt is so real
 ## animation
 
 animations are hereeee! it wasnt that hard, quite fun fixing async issues(didnt fix everything yet lol)
+
+## radix tree
+
+implementation was pretty neat, its straight forward really from trie
+i have kept both and gave a toggle option, maybe we could use this for benchmarking who knows, or like comparisong between algos

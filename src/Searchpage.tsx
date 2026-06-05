@@ -1,0 +1,387 @@
+import documents10k from "./minisearch/ingestion/documents10k.json";
+import documents from "./minisearch/ingestion/documents.json";
+import documents2k from "./minisearch/ingestion/documents2k.json";
+import documents5k from "./minisearch/ingestion/documents5k.json";
+import test from "./minisearch/ingestion/test.json";
+
+import { type Document } from "./types";
+import { type TrieStep } from "./types";
+import { type TrieHighlightType } from "./types";
+
+import { useMemo, useState, useRef } from "react";
+import { Link } from "react-router";
+import { ReactFlow, Background, Controls } from "@xyflow/react";
+
+import { Group, Panel, Separator } from "react-resizable-panels";
+
+// import { main } from "./minisearch/trie/main";
+import { buildFlowGraph } from "./flow";
+import { SearchEngine } from "./minisearch/search/engine";
+import CameraController from "./camera";
+import { getSnippets } from "./utils/getSnippets";
+import HighlightedText from "./utils/HighlightedText";
+
+function Searchpage() {
+  const engine = useMemo(() => {
+    const e = new SearchEngine();
+
+    e.addAll(documents10k);
+
+    return e;
+  }, []);
+
+  //trie
+
+  const [query, setQuery] = useState("");
+  const [highlights, setHighlights] = useState<Map<number, TrieHighlightType>>(
+    new Map(),
+  );
+  const [results, setResults] = useState<Document[]>([]); //invIndex
+  const [operator, setOperator] = useState<"AND" | "OR">("OR");
+  const [visualize, setVisualize] = useState(Boolean(true));
+  const [camera, setCamera] = useState(Boolean(true));
+  const [animate, setAnimate] = useState(Boolean(false));
+
+  // NEW: Layout Spacing States
+  const [ranksep, setRanksep] = useState(45); // Vertical gaps
+  const [nodesep, setNodesep] = useState(15); // Horizontal gaps
+
+  const [currentNode, setCurrentNode] = useState<number | null>(null);
+  const [isRadix, setIsRadix] = useState(true);
+  //use suggestions to show possible completions of the current query based on the trie contents
+  let tree;
+  if (isRadix) {
+    tree = engine.radix;
+  } else {
+    tree = engine.trie;
+  }
+  const baseGraph = useMemo(() => {
+    if (!visualize) {
+      return {
+        nodes: [],
+        edges: [],
+      };
+    }
+
+    return buildFlowGraph(tree.toJSON(), { ranksep, nodesep });
+  }, [visualize, tree, ranksep, nodesep]); // Rebuild graph if visualization toggled or tree changes or layout parameters change
+
+  const nodes = useMemo(() => {
+    return baseGraph.nodes.map((node) => {
+      const state = highlights.get(Number(node.id));
+
+      // Default fallback state (Clean and quiet)
+      let backgroundColor = "#ffffff";
+      let color = "#0f172a";
+      let fontWeight = "700";
+      if (Number(node.id) == currentNode) {
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            backgroundColor: "#000000",
+            color: "#ffffff",
+            fontWeight,
+
+            transition: "all 200ms ease",
+            // Remove the border entirely or make it match the background
+            border: `2px solid ${backgroundColor === "#ffffff" ? "#e2e8f0" : backgroundColor}`,
+          },
+        };
+      }
+      if (state === "prefix") {
+        backgroundColor = "#6366f1"; // Vibrant Indigo
+        color = "#ffffff";
+      }
+
+      if (state === "visited") {
+        backgroundColor = "#10b981"; // Vibrant Emerald Green
+        color = "#ffffff";
+      }
+
+      if (state === "found") {
+        backgroundColor = "#f97316"; // Vibrant Neon Orange
+        color = "#ffffff";
+      }
+
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          backgroundColor,
+          color,
+          fontWeight,
+          // Remove the border entirely or make it match the background
+          border: `2px solid ${backgroundColor === "#ffffff" ? "#e2e8f0" : backgroundColor}`,
+        },
+      };
+    });
+  }, [highlights, baseGraph.nodes]); // Included highlights in the dependency array
+
+  const animationId = useRef(0);
+  async function animateSteps(steps: TrieStep[]) {
+    const id = ++animationId.current; //cancelling aniamtion
+    const map = new Map<number, TrieHighlightType>();
+
+    for (const step of steps) {
+      if (id !== animationId.current) {
+        return;
+      }
+      setCurrentNode(step.nodeId);
+
+      map.set(step.nodeId, step.type);
+      setHighlights(new Map(map));
+
+      await sleep(50);
+    }
+
+    setCurrentNode(null);
+  }
+  return (
+    <div className="h-screen w-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
+      <Group orientation="horizontal">
+        {/* Left Sidebar Panel */}
+        <Panel
+          defaultSize="25%"
+          minSize="15%"
+          maxSize="45%"
+          className="overflow-y-auto border-r border-slate-200 bg-white p-6 shadow-xl flex flex-col"
+        >
+          {/* title */}
+          <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-slate-100">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                MiniSearch
+              </h2>
+            </div>
+
+            {/* Toggles Grid */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <label className="flex items-center justify-between cursor-pointer select-none group">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                  Visualize
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={visualize === true}
+                    onChange={() => setVisualize(!visualize)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                </div>
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer select-none group">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                  Camera
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={camera === true}
+                    onChange={() => setCamera(!camera)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                </div>
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer select-none group">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                  Animation
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={animate === true}
+                    onChange={() => setAnimate(!animate)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                </div>
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer select-none group">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-700 transition-colors">
+                  Radix
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isRadix === true}
+                    onChange={() => setIsRadix(!isRadix)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                </div>
+              </label>
+            </div>
+
+            {/* NEW: Sliders for Graph Layout Gaps (Visible only if visualization is enabled) */}
+            {visualize && (
+              <div className="mt-2 space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Vertical Gap</span>
+                    <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-mono">
+                      {ranksep}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="180"
+                    value={ranksep}
+                    onChange={(e) => setRanksep(Number(e.target.value))}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-indigo-600 hover:bg-slate-200 transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Horizontal Gap</span>
+                    <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-mono">
+                      {nodesep}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="15"
+                    max="150"
+                    value={nodesep}
+                    onChange={(e) => setNodesep(Number(e.target.value))}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-indigo-600 hover:bg-slate-200 transition-colors"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Search Input Container */}
+          <div className="relative group shrink-0">
+            <input
+              value={query}
+              placeholder="Search..."
+              onChange={(e) => {
+                const value = e.target.value;
+                setQuery(value);
+                const map = new Map<number, TrieHighlightType>();
+                const words = value.toLowerCase().split(/\s+/).filter(Boolean);
+                let triesuggest = "";
+                const allSteps: TrieStep[] = [];
+                words.forEach(async (word) => {
+                  triesuggest += " " + tree.prefixSearch(word).join(" ");
+
+                  //animation
+                  for (const word of words) {
+                    allSteps.push(...tree.prefixSearchSteps(word));
+                  }
+                  if (animate) {
+                    await animateSteps(allSteps);
+                  } else {
+                    for (const step of tree.prefixSearchSteps(word)) {
+                      map.set(step.nodeId, step.type);
+                    }
+                  }
+                });
+                setHighlights(map);
+                console.log(triesuggest);
+                setResults(engine.search(triesuggest, operator));
+                console.log(engine.search(triesuggest, operator));
+              }}
+              className="w-full h-12 px-4 rounded-xl text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 shadow-inner"
+            />
+            <div className="flex gap-4 mt-2 text-sm font-semibold text-slate-600">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={operator === "AND"}
+                  onChange={() => setOperator("AND")}
+                  className="accent-indigo-600"
+                />
+                AND
+              </label>
+
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={operator === "OR"}
+                  onChange={() => setOperator("OR")}
+                  className="accent-indigo-600"
+                />
+                OR
+              </label>
+            </div>
+          </div>
+
+          {/* Results List */}
+          <div className="mt-8 flex-1 flex flex-col min-h-0">
+            <h3 className="mb-4 text-xs font-bold tracking-widest text-slate-400 uppercase shrink-0">
+              Results ({results.length})
+            </h3>
+
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+              {results.map((doc) => {
+                const snippets = getSnippets(doc.content, query);
+
+                return (
+                  <Link
+                    key={doc.id}
+                    to={`/docs/${encodeURIComponent(doc.id)}`}
+                    className="block cursor-pointer rounded-2xl border border-slate-100 bg-white p-5 transition duration-200 hover:border-indigo-400 hover:bg-slate-50/50 hover:shadow-md group"
+                  >
+                    <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      {doc.title}
+                    </h3>
+
+                    {snippets.map((snippet, idx) => (
+                      <p
+                        key={idx}
+                        className="mt-2 text-sm text-slate-500 leading-relaxed"
+                      >
+                        <HighlightedText text={snippet} query={query} />
+                      </p>
+                    ))}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </Panel>
+        {visualize && (
+          <>
+            {/* Resizable Separator Widget */}
+            <Separator className="w-2 bg-slate-100 cursor-col-resize flex items-center justify-center transition-colors duration-150 hover:bg-indigo-100 active:bg-indigo-200">
+              <div className="w-0.5 h-8 bg-slate-300 rounded-full" />
+            </Separator>
+
+            {/* Right Flow Graph Panel */}
+            <Panel className="relative bg-white">
+              <div className="absolute inset-0 w-full h-full">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={baseGraph.edges}
+                  onlyRenderVisibleElements
+                  fitView
+                >
+                  <Background color="#cbd5e1" gap={20} size={1} />
+                  <Controls className="bg-white! border! border-slate-200! rounded-lg! shadow-lg!" />
+                  {camera && (
+                    <CameraController
+                      highlightedNodes={[...highlights.keys()]}
+                      nodes={nodes}
+                    />
+                  )}
+                </ReactFlow>
+              </div>
+            </Panel>
+          </>
+        )}
+      </Group>
+    </div>
+  );
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export default Searchpage;
