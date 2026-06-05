@@ -4,6 +4,15 @@ import documents2k from "./minisearch/ingestion/documents2k.json";
 import documents5k from "./minisearch/ingestion/documents5k.json";
 import test from "./minisearch/ingestion/test.json";
 
+import {
+  RotateCcw,
+  SkipBack,
+  Play,
+  Pause,
+  SkipForward,
+  ChevronsRight,
+} from "lucide-react"; // Or swap with your app's preferred icon set
+
 import { type Document } from "./types";
 import { type TrieStep } from "./types";
 import { type TrieHighlightType } from "./types";
@@ -44,6 +53,11 @@ function Searchpage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [fuzzyMode, setFuzzyMode] = useState<boolean>(false);
   const [maxDistance, setMaxDistance] = useState<number>(1);
+  // Playback state
+  const [steps, setSteps] = useState<TrieStep[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
 
   // NEW: Layout Spacing States
   const [ranksep, setRanksep] = useState(45); // Vertical gaps
@@ -158,7 +172,7 @@ function Searchpage() {
     setCurrentStep(null);
   }
 
-  // Apply steps[0..currentStepIndex-1] to compute highlights and current step/node
+  // Derive highlights from steps[0..index-1]
   function applyStepsToHighlights(index: number) {
     const map = new Map<number, TrieHighlightType>();
     for (let i = 0; i < index && i < steps.length; i++) {
@@ -167,7 +181,7 @@ function Searchpage() {
     }
     setHighlights(map);
 
-    if (index > 0 && steps.length >= 1) {
+    if (index > 0 && steps.length > 0) {
       const cur = steps[Math.min(index - 1, steps.length - 1)];
       setCurrentNode(cur.nodeId);
       setCurrentStep(cur);
@@ -177,12 +191,13 @@ function Searchpage() {
     }
   }
 
-  // When index or steps change, recompute highlights
+  // Recompute highlights when current index or steps change
   useEffect(() => {
     applyStepsToHighlights(currentStepIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex, steps]);
 
-  // Playback loop: advance while playing, respecting playbackSpeed
+  // Playback loop
   useEffect(() => {
     if (!isPlaying) return;
     if (currentStepIndex >= steps.length) {
@@ -193,11 +208,11 @@ function Searchpage() {
     const BASE_DELAY = 200; // ms at 1x
     const delay = Math.max(10, Math.floor(BASE_DELAY / playbackSpeed));
 
-    const timer = setTimeout(() => {
+    const t = setTimeout(() => {
       setCurrentStepIndex((i) => Math.min(i + 1, steps.length));
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(t);
   }, [isPlaying, currentStepIndex, playbackSpeed, steps.length]);
   return (
     <div className="h-screen w-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
@@ -215,6 +230,133 @@ function Searchpage() {
               <h2 className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 MiniSearch
               </h2>
+            </div>
+
+            {/* Playback Controls */}
+            <div className="mt-5 pt-4 border-t border-slate-100 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/60 shadow-xs">
+              {/* Control Bar Layout */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* Player Action Buttons Group */}
+                <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200/80 shadow-xs">
+                  <button
+                    title="Reset"
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setCurrentStepIndex(0);
+                      setSteps([]);
+                      setHighlights(new Map());
+                    }}
+                    className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <RotateCcw size={15} strokeWidth={2.5} />
+                  </button>
+
+                  <button
+                    title="Step Back"
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setCurrentStepIndex((i) => Math.max(0, i - 1));
+                    }}
+                    className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <SkipBack size={15} strokeWidth={2.5} />
+                  </button>
+
+                  {/* Core Main Play/Pause Call-to-Action */}
+                  <button
+                    title={isPlaying ? "Pause" : "Play"}
+                    onClick={() => {
+                      if (isPlaying) setIsPlaying(false);
+                      else {
+                        if (currentStepIndex >= steps.length)
+                          setCurrentStepIndex(0);
+                        setIsPlaying(true);
+                      }
+                    }}
+                    className={`p-2.5 rounded-lg transition-all transform active:scale-95 cursor-pointer flex items-center justify-center ${
+                      isPlaying
+                        ? "bg-slate-800 hover:bg-slate-900 text-white shadow-xs"
+                        : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200"
+                    }`}
+                  >
+                    {isPlaying ? (
+                      <Pause size={15} strokeWidth={2.5} fill="currentColor" />
+                    ) : (
+                      <Play
+                        size={15}
+                        strokeWidth={2.5}
+                        fill="currentColor"
+                        className="translate-x-[0.5px]"
+                      />
+                    )}
+                  </button>
+
+                  <button
+                    title="Step Forward"
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setCurrentStepIndex((i) => Math.min(steps.length, i + 1));
+                    }}
+                    className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <SkipForward size={15} strokeWidth={2.5} />
+                  </button>
+
+                  <button
+                    title="Jump to End"
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setCurrentStepIndex(steps.length);
+                    }}
+                    className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <ChevronsRight size={15} strokeWidth={2.5} />
+                  </button>
+                </div>
+
+                {/* Speed Dropdown Menu Config */}
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                    Speed
+                  </span>
+                  <select
+                    value={playbackSpeed}
+                    onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                    className="text-xs font-bold text-slate-700 bg-transparent border-none focus:outline-none focus:ring-0 cursor-pointer pr-1"
+                  >
+                    <option value={0.25}>0.25x</option>
+                    <option value={0.5}>0.5x</option>
+                    <option value={1}>1x</option>
+                    <option value={2}>2x</option>
+                    <option value={4}>4x</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Timeline Track Slider Section */}
+              <div className="mt-4 pt-1 flex flex-col gap-1.5">
+                <div className="relative w-full flex items-center group">
+                  <input
+                    type="range"
+                    min={0}
+                    max={steps.length}
+                    value={currentStepIndex}
+                    onChange={(e) => {
+                      setIsPlaying(false);
+                      setCurrentStepIndex(Number(e.target.value));
+                    }}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200/80 accent-indigo-600 hover:accent-indigo-700 transition-all outline-none"
+                  />
+                </div>
+
+                {/* Step Metric Counter */}
+                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400">
+                  <span className="bg-slate-200/60 px-1.5 py-0.5 rounded text-slate-500">
+                    STEP {currentStepIndex}
+                  </span>
+                  <span className="text-slate-400">TOTAL: {steps.length}</span>
+                </div>
+              </div>
             </div>
 
             {/* Toggles Grid */}
@@ -295,101 +437,6 @@ function Searchpage() {
               </label>
             </div>
 
-            {/* Playback Controls */}
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <div className="flex items-center gap-2">
-                <button
-                  title="Reset"
-                  onClick={() => {
-                    setIsPlaying(false);
-                    setCurrentStepIndex(0);
-                  }}
-                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
-                >
-                  ⏮
-                </button>
-
-                <button
-                  title="Step Back"
-                  onClick={() => {
-                    setIsPlaying(false);
-                    setCurrentStepIndex((i) => Math.max(0, i - 1));
-                  }}
-                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
-                >
-                  ◀
-                </button>
-
-                <button
-                  title={isPlaying ? "Pause" : "Play"}
-                  onClick={() => {
-                    if (isPlaying) setIsPlaying(false);
-                    else {
-                      // if at end, jump to start
-                      if (currentStepIndex >= steps.length) setCurrentStepIndex(0);
-                      setIsPlaying(true);
-                    }
-                  }}
-                  className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                >
-                  {isPlaying ? "⏸" : "▶"}
-                </button>
-
-                <button
-                  title="Step Forward"
-                  onClick={() => {
-                    setIsPlaying(false);
-                    setCurrentStepIndex((i) => Math.min(steps.length, i + 1));
-                  }}
-                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
-                >
-                  ▶
-                </button>
-
-                <button
-                  title="Jump to End"
-                  onClick={() => {
-                    setIsPlaying(false);
-                    setCurrentStepIndex(steps.length);
-                  }}
-                  className="px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
-                >
-                  ⏭
-                </button>
-
-                <div className="ml-3 flex items-center gap-2 text-sm text-slate-500">
-                  <span>Speed:</span>
-                  <select
-                    value={playbackSpeed}
-                    onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                    className="text-sm rounded border border-slate-200 bg-white px-2 py-0.5"
-                  >
-                    <option value={0.25}>0.25x</option>
-                    <option value={0.5}>0.5x</option>
-                    <option value={1}>1x</option>
-                    <option value={2}>2x</option>
-                    <option value={4}>4x</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Timeline Slider */}
-              <div className="mt-3">
-                <input
-                  type="range"
-                  min={0}
-                  max={steps.length}
-                  value={currentStepIndex}
-                  onChange={(e) => {
-                    setIsPlaying(false);
-                    setCurrentStepIndex(Number(e.target.value));
-                  }}
-                  className="w-full"
-                />
-                <div className="text-xs text-slate-400 mt-1">Step {currentStepIndex} / {steps.length}</div>
-              </div>
-            </div>
-
             {/* Sliders for Graph Layout Gaps */}
             {visualize && (
               <div className="mt-2 space-y-4 pt-4 border-t border-slate-100">
@@ -456,38 +503,47 @@ function Searchpage() {
                 setQuery(value);
 
                 const words = value.toLowerCase().split(/\s+/).filter(Boolean);
-                const previewMap = new Map<number, TrieHighlightType>();
+                const map = new Map<number, TrieHighlightType>();
                 const allSteps: TrieStep[] = [];
                 let triesuggest = "";
 
                 for (const word of words) {
-                  // suggestions (did-you-mean) use fuzzySearch quick API when available
+                  // suggestions (did-you-mean) use fuzzySearch quick API
                   setSuggestions(
-                    (tree as any).fuzzySearch
-                      ? (tree as any).fuzzySearch(word, maxDistance).filter((w: string) => w.length > 1)
-                      : [],
+                    tree
+                      .fuzzySearch(word, maxDistance)
+                      .filter((w) => w.length > 1),
                   );
 
                   triesuggest += " " + tree.prefixSearch(word).join(" ");
 
                   // build steps from appropriate generator
-                  if (fuzzyMode && (tree as any).fuzzySearchSteps) {
-                    for (const step of (tree as any).fuzzySearchSteps(word, maxDistance) as Generator<TrieStep>) {
+                  if (fuzzyMode) {
+                    for (const step of tree.fuzzySearchSteps(
+                      word,
+                      maxDistance,
+                    )) {
                       allSteps.push(step);
-                      if (!animate) previewMap.set(step.nodeId, step.type as TrieHighlightType);
+                      if (!animate)
+                        map.set(step.nodeId, step.type as TrieHighlightType);
                     }
                   } else {
                     for (const step of tree.prefixSearchSteps(word)) {
                       allSteps.push(step);
-                      if (!animate) previewMap.set(step.nodeId, step.type as TrieHighlightType);
+                      if (!animate)
+                        map.set(step.nodeId, step.type as TrieHighlightType);
                     }
                   }
                 }
 
-                setHighlights(previewMap);
+                // store steps and either start playback or show static preview
                 setSteps(allSteps);
                 setCurrentStepIndex(0);
-                if (animate && allSteps.length > 0) setIsPlaying(true);
+                if (animate && allSteps.length > 0) {
+                  setIsPlaying(true);
+                } else {
+                  setHighlights(map);
+                }
 
                 setResults(engine.search(triesuggest, operator));
               }}

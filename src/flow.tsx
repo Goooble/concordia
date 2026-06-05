@@ -51,8 +51,7 @@ export function buildFlowGraph(
     });
 
     if (parentId) {
-      const parentAccent =
-        VIBRANT_PALETTE[(depth - 1) % VIBRANT_PALETTE.length];
+      const parentAccent = "#06b6d4";
       edges.push({
         id: `${parentId}-${id}`,
         source: parentId,

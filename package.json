@@ -17,6 +17,7 @@
     "d3-flextree": "^2.1.2",
     "d3-hierarchy": "^3.1.2",
     "dagre": "^0.8.5",
+    "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
