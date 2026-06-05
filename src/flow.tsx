@@ -1,13 +1,13 @@
-import dagre from "dagre";
+import * as d3Hierarchy from "d3-hierarchy";
+import { flextree } from "d3-flextree";
 import { type Edge, type Node } from "@xyflow/react";
 
 const NODE_HEIGHT = 44;
-// High-saturation minimalist colors (Electric Violet, Cyber Teal, Neon Tangerine, Acid Lime)
 const VIBRANT_PALETTE = ["#6366f1", "#06b6d4", "#f97316", "#10b981"];
 
 function getNodeWidth(label: string) {
-  const CHAR_WIDTH = 9; // roughly 9px per character
-  const PADDING = 32; // extra padding for text breathing room
+  const CHAR_WIDTH = 9;
+  const PADDING = 32;
   return Math.max(60, label.length * CHAR_WIDTH + PADDING);
 }
 
@@ -25,8 +25,6 @@ export function buildFlowGraph(
 
   function dfs(node: any, parentId?: string, depth = 0) {
     const id = node.id.toString();
-
-    // Assign a pure, flat vibrant accent color based on tree layer
     const accentColor = VIBRANT_PALETTE[depth % VIBRANT_PALETTE.length];
     const width = getNodeWidth(node.label);
 
@@ -34,39 +32,36 @@ export function buildFlowGraph(
       id,
       position: { x: 0, y: 0 },
       data: { label: node.label },
-      // Minimalist Frame + Saturated Color Core
       style: {
-        width: width, // FIX: Use the calculated dynamic width instead of static NODE_SIZE
+        width: width,
         height: NODE_HEIGHT,
-        borderRadius: "12px", // Sleek, modern rounded squares
+        borderRadius: "12px",
         backgroundColor: "#ffffff",
-        border: `3px solid ${accentColor}`, // The pop of color comes entirely from a thick, crisp border
-        color: "#0f172a", // Solid dark text for pure legibility
+        border: `3px solid ${accentColor}`,
+        color: "#0f172a",
         fontSize: "13px",
         fontWeight: "700",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "none", // Stripped out complex shadows for flat minimalism
+        boxShadow: "none",
         padding: 0,
         fontFamily: "system-ui, -apple-system, sans-serif",
       },
     });
 
     if (parentId) {
-      // Find the parent's accent color to keep the connecting pipeline unified
       const parentAccent =
         VIBRANT_PALETTE[(depth - 1) % VIBRANT_PALETTE.length];
-
       edges.push({
         id: `${parentId}-${id}`,
         source: parentId,
         target: id,
         type: "smoothstep",
-        animated: false, // Flat design favors static precision over glowing animations
+        animated: false,
         style: {
-          stroke: parentAccent, // Colored lines keep the data flow highly visible
-          strokeWidth: 3, // Slightly thicker line to make the color pop
+          stroke: parentAccent,
+          strokeWidth: 3,
         },
       });
     }
@@ -80,39 +75,47 @@ export function buildFlowGraph(
 
   dfs(tree);
 
-  const graph = new dagre.graphlib.Graph();
-  graph.setDefaultEdgeLabel(() => ({}));
+  if (nodes.length === 0) {
+    return { nodes, edges };
+  }
 
-  // LAYOUT ENGINE TUNING: Controlled dynamically by your new App.tsx sliders
-  graph.setGraph({
-    rankdir: "TB",
-    ranksep: config.ranksep,
-    nodesep: config.nodesep,
+  // 1. Build standard D3 hierarchy
+  const d3Root = d3Hierarchy
+    .stratify<any>()
+    .id((d) => d.id)
+    .parentId((d) => {
+      const edge = edges.find((e) => e.target === d.id);
+      return edge ? edge.source : undefined;
+    })(nodes);
+
+  // 2. Initialize the flex layout engine
+  const flexLayout = flextree();
+
+  // 3. Set the dynamic size of each node bounding box
+  // [Total Width allocated for layout tracking, Total Height allocated for tracking]
+  flexLayout.nodeSize((d3Node: any) => {
+    const originalNode = nodes.find((n) => n.id === d3Node.id);
+    const nodeWidth = Number(originalNode?.style?.width) || 60;
+
+    // We add nodesep directly onto the width allocation so nodes never crash sideways
+    return [nodeWidth + config.nodesep, NODE_HEIGHT + config.ranksep];
   });
 
-  // Pass exact calculated node dimensions down to Dagre engine
+  // 4. Calculate optimal tight layout positions
+  flexLayout(d3Root);
+
+  // 5. Update native @xyflow/react nodes coordinates
   nodes.forEach((node) => {
-    graph.setNode(node.id, {
-      width: Number(node.style?.width) || 60,
-      height: NODE_HEIGHT,
-    });
-  });
+    const d3Node = d3Root.descendants().find((d) => d.id === node.id);
+    if (d3Node) {
+      const nodeWidth = Number(node.style?.width) || 60;
 
-  edges.forEach((edge) => {
-    graph.setEdge(edge.source, edge.target);
-  });
-
-  dagre.layout(graph);
-
-  // Re-map node coordinates based on Dagre calculation updates
-  nodes.forEach((node) => {
-    const pos = graph.node(node.id);
-    const nodeWidth = Number(node.style?.width) || 60;
-
-    node.position = {
-      x: pos.x - nodeWidth / 2,
-      y: pos.y - NODE_HEIGHT / 2,
-    };
+      node.position = {
+        // d3 Node coordinates represent the true horizontal node center point
+        x: d3Node.x - nodeWidth / 2,
+        y: d3Node.y,
+      };
+    }
   });
 
   return { nodes, edges };
