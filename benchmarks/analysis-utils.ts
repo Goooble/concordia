@@ -1,3 +1,6 @@
+import { Trie } from "../src/minisearch/trie/trie";
+import { Radix } from "../src/minisearch/trie/radix";
+
 export type DatasetStats = {
   wordCount: number;
   averageWordLength: number;
@@ -12,11 +15,29 @@ export type MemoryMetrics = {
   memoryMB: number;
 };
 
+export type StructuralMemoryMetrics = {
+  nodeCount: number;
+  totalStoredCharacters: number;
+  estimatedMemory: number;
+};
+
+export type CompressionStats = {
+  nodeCount: number;
+  nodeReductionPercent: number;
+  maxDepth: number;
+  depthReductionPercent: number;
+  structuralCharacterCount: number;
+};
+
 export type ScalingMetrics = {
   nodesPerWord: number;
-  memoryPerWord: number;
+  estimatedMemoryPerWord: number;
   buildTimePerWord: number;
 };
+
+// Structural memory overhead constants (relative units for comparison)
+const NODE_OVERHEAD = 50; // bytes per node (approximate V8 object overhead)
+const CHAR_OVERHEAD = 1; // bytes per character stored in edges
 
 export function computeDatasetStats(words: string[]): DatasetStats {
   const firstLetters = new Set<string>();
@@ -67,14 +88,91 @@ export function measureMemory(fn: () => void): MemoryMetrics {
 
 export function computeScalingMetrics(
   nodeCount: number,
-  memoryMB: number,
+  estimatedMemory: number,
   buildTimeMs: number,
   wordCount: number,
 ): ScalingMetrics {
   return {
     nodesPerWord: wordCount > 0 ? nodeCount / wordCount : 0,
-    memoryPerWord: wordCount > 0 ? memoryMB / wordCount : 0,
+    estimatedMemoryPerWord: wordCount > 0 ? estimatedMemory / wordCount : 0,
     buildTimePerWord: wordCount > 0 ? buildTimeMs / wordCount : 0,
+  };
+}
+
+export function computeTrieStructuralMemory(
+  trie: Trie,
+): StructuralMemoryMetrics {
+  let nodeCount = 0;
+  let totalStoredCharacters = 0;
+
+  function traverse(node: any): void {
+    nodeCount++;
+    if (node.children) {
+      for (const [char, child] of node.children) {
+        totalStoredCharacters += 1; // Each entry in the map contributes one character
+        traverse(child);
+      }
+    }
+  }
+
+  traverse(trie.root);
+
+  const estimatedMemory =
+    nodeCount * NODE_OVERHEAD + totalStoredCharacters * CHAR_OVERHEAD;
+
+  return {
+    nodeCount,
+    totalStoredCharacters,
+    estimatedMemory,
+  };
+}
+
+export function computeRadixStructuralMemory(
+  radix: Radix,
+): StructuralMemoryMetrics {
+  const radixAny = radix as any;
+  let nodeCount = 0;
+  let totalStoredCharacters = 0;
+
+  // Defensive check for root
+  if (!radixAny.root) {
+    return {
+      nodeCount: 0,
+      totalStoredCharacters: 0,
+      estimatedMemory: 0,
+    };
+  }
+
+  function traverse(node: any): void {
+    if (!node) return;
+
+    nodeCount++;
+
+    // Each node has an 'edge' property containing the label string
+    // The root node has edge="", which contributes 0 characters (correct)
+    if (node.edge && typeof node.edge === "string") {
+      totalStoredCharacters += node.edge.length;
+    }
+
+    // Traverse children - ensure proper defensive checks
+    if (node.children) {
+      if (Array.isArray(node.children)) {
+        for (const child of node.children) {
+          if (child) traverse(child);
+        }
+      }
+    }
+  }
+
+  traverse(radixAny.root);
+
+  const estimatedMemory =
+    nodeCount * NODE_OVERHEAD + totalStoredCharacters * CHAR_OVERHEAD;
+
+  return {
+    nodeCount,
+    totalStoredCharacters,
+    estimatedMemory,
   };
 }
 

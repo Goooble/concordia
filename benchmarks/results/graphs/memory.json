@@ -1,0 +1,27 @@
+[
+  {
+    "datasetSize": 1000,
+    "trieEstimatedKB": 119.87890625,
+    "radixEstimatedKB": 61.822265625
+  },
+  {
+    "datasetSize": 5000,
+    "trieEstimatedKB": 655.1796875,
+    "radixEstimatedKB": 324.076171875
+  },
+  {
+    "datasetSize": 10000,
+    "trieEstimatedKB": 1310.01171875,
+    "radixEstimatedKB": 642.873046875
+  },
+  {
+    "datasetSize": 50000,
+    "trieEstimatedKB": 6688.51953125,
+    "radixEstimatedKB": 3207.07421875
+  },
+  {
+    "datasetSize": 100000,
+    "trieEstimatedKB": 13090.8623046875,
+    "radixEstimatedKB": 6393.5478515625
+  }
+]

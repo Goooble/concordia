@@ -2,21 +2,24 @@
   "datasets": [
     {
       "datasetSize": 1000,
-      "compression": {
-        "compressionRatio": 0.5060240963855421,
-        "nodeReductionPercent": 49.397590361445786
+      "datasetStats": {
+        "wordCount": 1000,
+        "averageWordLength": 7.501,
+        "shortestWordLength": 1,
+        "longestWordLength": 20,
+        "uniqueFirstLetters": 31
       },
       "trie": {
         "build": {
-          "meanMs": 0.10272347966310542,
-          "throughputOpsPerSec": 10034.877232541194,
-          "wordsPerSecond": 10034877.232541194
+          "meanMs": 0.10732315561279135,
+          "throughputOpsPerSec": 9609.358340183027,
+          "wordsPerSecond": 9609358.340183027
         },
         "exactSearch": {
           "time": {
-            "meanMs": 0.00013603612343846756,
-            "throughputOpsPerSec": 8788392.719654568,
-            "samples": 7350989
+            "meanMs": 0.0001423387174369756,
+            "throughputOpsPerSec": 8357971.2523493515,
+            "samples": 7025496
           },
           "nodesVisited": {
             "average": 8.36,
@@ -27,9 +30,9 @@
         },
         "prefixSearch": {
           "time": {
-            "meanMs": 0.00922155206469901,
-            "throughputOpsPerSec": 792904.8824925844,
-            "samples": 108442
+            "meanMs": 0.009265527231116967,
+            "throughputOpsPerSec": 761900.644712832,
+            "samples": 107928
           },
           "nodesVisited": {
             "average": 476.83,
@@ -40,9 +43,9 @@
         },
         "fuzzySearch": {
           "time": {
-            "meanMs": 0.02444463734141126,
-            "throughputOpsPerSec": 53640.147824648215,
-            "samples": 40909
+            "meanMs": 0.024267759337004972,
+            "throughputOpsPerSec": 53590.64027182665,
+            "samples": 41207
           },
           "nodesVisited": {
             "average": 264.875,
@@ -64,38 +67,40 @@
           },
           "pruningPercentage": 40.17842019084185
         },
-        "searchMiss": {
-          "time": {
-            "meanMs": 0.000047278089768821225,
-            "throughputOpsPerSec": 21975909.446683563,
-            "samples": 21151447
-          },
-          "nodesVisited": {
-            "average": 2.2,
-            "min": 1,
-            "max": 3,
-            "total": 11
-          }
-        },
         "structure": {
           "nodeCount": 2407,
           "maxDepth": 20,
           "averageDepth": 7.186539260490237,
           "averageBranchingFactor": 1.4329958308516975,
           "maxBranchingFactor": 31
+        },
+        "structuralMemory": {
+          "nodeCount": 2407,
+          "totalStoredCharacters": 2406,
+          "estimatedMemory": 122756
+        },
+        "runtimeMemory": {
+          "memoryBytes": 639800,
+          "memoryKB": 624.8046875,
+          "memoryMB": 0.6101608276367188
+        },
+        "scaling": {
+          "nodesPerWord": 2.407,
+          "estimatedMemoryPerWord": 0.00011706924438476563,
+          "buildTimePerWord": 0.00010732315561279135
         }
       },
       "radix": {
         "build": {
-          "meanMs": 0.20002403780000147,
-          "throughputOpsPerSec": 5033.851758752177,
-          "wordsPerSecond": 5033851.7587521775
+          "meanMs": 0.19891125755767297,
+          "throughputOpsPerSec": 5063.934288079794,
+          "wordsPerSecond": 5063934.288079794
         },
         "exactSearch": {
           "time": {
-            "meanMs": 0.000257681172655515,
-            "throughputOpsPerSec": 4611971.432189947,
-            "samples": 3880765
+            "meanMs": 0.00026120608662405173,
+            "throughputOpsPerSec": 4576926.330201838,
+            "samples": 3828395
           },
           "nodesVisited": {
             "average": 6.74,
@@ -106,9 +111,9 @@
         },
         "prefixSearch": {
           "time": {
-            "meanMs": 0.0038360187732567,
-            "throughputOpsPerSec": 959123.5337489578,
-            "samples": 260690
+            "meanMs": 0.00374698688573859,
+            "throughputOpsPerSec": 979051.8387560223,
+            "samples": 266885
           },
           "nodesVisited": {
             "average": 243.405,
@@ -119,9 +124,9 @@
         },
         "fuzzySearch": {
           "time": {
-            "meanMs": 0.036510182621397734,
-            "throughputOpsPerSec": 36893.41726321157,
-            "samples": 27390
+            "meanMs": 0.03750780867902894,
+            "throughputOpsPerSec": 35872.16912853814,
+            "samples": 26662
           },
           "nodesVisited": {
             "average": 240.96,
@@ -143,135 +148,715 @@
           },
           "pruningPercentage": 42.4724251539894
         },
-        "searchMiss": {
-          "time": {
-            "meanMs": 0.00012686721582467838,
-            "throughputOpsPerSec": 8414511.32682616,
-            "samples": 7882257
-          },
-          "nodesVisited": {
-            "average": 2.2,
-            "min": 1,
-            "max": 3,
-            "total": 11
-          }
-        },
         "structure": {
           "nodeCount": 1218,
           "maxDepth": 11,
           "averageDepth": 5.653530377668309,
           "averageBranchingFactor": 2.483673469387755,
           "maxBranchingFactor": 31
+        },
+        "structuralMemory": {
+          "nodeCount": 1218,
+          "totalStoredCharacters": 2406,
+          "estimatedMemory": 63306
+        },
+        "runtimeMemory": {
+          "memoryBytes": 663808,
+          "memoryKB": 648.25,
+          "memoryMB": 0.633056640625
+        },
+        "scaling": {
+          "nodesPerWord": 1.218,
+          "estimatedMemoryPerWord": 0.00006037330627441406,
+          "buildTimePerWord": 0.00019891125755767296
         }
+      }
+    },
+    {
+      "datasetSize": 5000,
+      "datasetStats": {
+        "wordCount": 5000,
+        "averageWordLength": 8.8262,
+        "shortestWordLength": 1,
+        "longestWordLength": 21,
+        "uniqueFirstLetters": 32
       },
-      "worstCase": {
-        "trie": {
-          "longest": {
-            "time": {
-              "meanMs": 0.00022412501086759812,
-              "throughputOpsPerSec": 4495389.972763058,
-              "samples": 4461796
-            },
-            "nodesVisited": {
-              "average": 21,
-              "min": 21,
-              "max": 21,
-              "total": 21
-            }
+      "trie": {
+        "build": {
+          "meanMs": 0.6712605348993588,
+          "throughputOpsPerSec": 1520.3212990801997,
+          "wordsPerSecond": 7601606.495400998
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.00018893911324393113,
+            "throughputOpsPerSec": 6152016.902236401,
+            "samples": 5292711
           },
-          "shortest": {
-            "time": {
-              "meanMs": 0.00003425816814937158,
-              "throughputOpsPerSec": 30386533.863468673,
-              "samples": 29190119
-            },
-            "nodesVisited": {
-              "average": 2,
-              "min": 2,
-              "max": 2,
-              "total": 2
-            }
-          },
-          "random": {
-            "time": {
-              "meanMs": 0.00005705361704747242,
-              "throughputOpsPerSec": 17953713.279254135,
-              "samples": 17527373
-            },
-            "nodesVisited": {
-              "average": 5,
-              "min": 5,
-              "max": 5,
-              "total": 5
-            }
-          },
-          "missing": {
-            "time": {
-              "meanMs": 0.000032731633798622,
-              "throughputOpsPerSec": 31699899.03767122,
-              "samples": 30551485
-            },
-            "nodesVisited": {
-              "average": 1,
-              "min": 1,
-              "max": 1,
-              "total": 1
-            }
+          "nodesVisited": {
+            "average": 9.76,
+            "min": 2,
+            "max": 17,
+            "total": 1952
           }
         },
-        "radix": {
-          "longest": {
-            "time": {
-              "meanMs": 0.0003407219419808288,
-              "throughputOpsPerSec": 3069822.877488389,
-              "samples": 2934945
-            },
-            "nodesVisited": {
-              "average": 10,
-              "min": 10,
-              "max": 10,
-              "total": 10
-            }
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.037429030428922476,
+            "throughputOpsPerSec": 300099.0999225688,
+            "samples": 26718
           },
-          "shortest": {
-            "time": {
-              "meanMs": 0.000037879655617461377,
-              "throughputOpsPerSec": 29374184.24212627,
-              "samples": 26399396
-            },
-            "nodesVisited": {
-              "average": 2,
-              "min": 2,
-              "max": 2,
-              "total": 2
-            }
-          },
-          "random": {
-            "time": {
-              "meanMs": 0.00020796414449516983,
-              "throughputOpsPerSec": 4942445.919506664,
-              "samples": 4808522
-            },
-            "nodesVisited": {
-              "average": 5,
-              "min": 5,
-              "max": 5,
-              "total": 5
-            }
-          },
-          "missing": {
-            "time": {
-              "meanMs": 0.00012143347206771927,
-              "throughputOpsPerSec": 8384731.256580163,
-              "samples": 8234962
-            },
-            "nodesVisited": {
-              "average": 1,
-              "min": 1,
-              "max": 1,
-              "total": 1
-            }
+          "nodesVisited": {
+            "average": 1217.965,
+            "min": 4,
+            "max": 6506,
+            "total": 243593
           }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.04392652569620487,
+            "throughputOpsPerSec": 29819.827067446524,
+            "samples": 22766
+          },
+          "nodesVisited": {
+            "average": 437.5,
+            "min": 131,
+            "max": 658,
+            "total": 87500
+          },
+          "nodesPruned": {
+            "average": 322.04,
+            "min": 87,
+            "max": 482,
+            "total": 64408
+          },
+          "matchesFound": {
+            "average": 1.245,
+            "min": 0,
+            "max": 20,
+            "total": 249
+          },
+          "pruningPercentage": 42.39934697316797
+        },
+        "structure": {
+          "nodeCount": 13155,
+          "maxDepth": 21,
+          "averageDepth": 8.382972253895858,
+          "averageBranchingFactor": 1.402195927939452,
+          "maxBranchingFactor": 32
+        },
+        "structuralMemory": {
+          "nodeCount": 13155,
+          "totalStoredCharacters": 13154,
+          "estimatedMemory": 670904
+        },
+        "runtimeMemory": {
+          "memoryBytes": 3348200,
+          "memoryKB": 3269.7265625,
+          "memoryMB": 3.1930923461914062
+        },
+        "scaling": {
+          "nodesPerWord": 2.631,
+          "estimatedMemoryPerWord": 0.00012796478271484375,
+          "buildTimePerWord": 0.00013425210697987175
+        }
+      },
+      "radix": {
+        "build": {
+          "meanMs": 1.3334192493333017,
+          "throughputOpsPerSec": 757.1366641153932,
+          "wordsPerSecond": 3785683.320576966
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.0003581762405965997,
+            "throughputOpsPerSec": 3448091.815838904,
+            "samples": 2791922
+          },
+          "nodesVisited": {
+            "average": 7.73,
+            "min": 2,
+            "max": 13,
+            "total": 1546
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.011551148071561651,
+            "throughputOpsPerSec": 456657.3315627804,
+            "samples": 86573
+          },
+          "nodesVisited": {
+            "average": 589.77,
+            "min": 4,
+            "max": 3036,
+            "total": 117954
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.06809429892415579,
+            "throughputOpsPerSec": 19316.357981328365,
+            "samples": 14686
+          },
+          "nodesVisited": {
+            "average": 410.235,
+            "min": 124,
+            "max": 604,
+            "total": 82047
+          },
+          "nodesPruned": {
+            "average": 322.04,
+            "min": 87,
+            "max": 482,
+            "total": 64408
+          },
+          "matchesFound": {
+            "average": 1.245,
+            "min": 0,
+            "max": 20,
+            "total": 249
+          },
+          "pruningPercentage": 43.97801372435219
+        },
+        "structure": {
+          "nodeCount": 6374,
+          "maxDepth": 14,
+          "averageDepth": 6.636178224035143,
+          "averageBranchingFactor": 2.4511538461538462,
+          "maxBranchingFactor": 32
+        },
+        "structuralMemory": {
+          "nodeCount": 6374,
+          "totalStoredCharacters": 13154,
+          "estimatedMemory": 331854
+        },
+        "runtimeMemory": {
+          "memoryBytes": 3723888,
+          "memoryKB": 3636.609375,
+          "memoryMB": 3.5513763427734375
+        },
+        "scaling": {
+          "nodesPerWord": 1.2748,
+          "estimatedMemoryPerWord": 0.00006329612731933594,
+          "buildTimePerWord": 0.0002666838498666603
+        }
+      }
+    },
+    {
+      "datasetSize": 10000,
+      "datasetStats": {
+        "wordCount": 10000,
+        "averageWordLength": 8.5284,
+        "shortestWordLength": 1,
+        "longestWordLength": 21,
+        "uniqueFirstLetters": 34
+      },
+      "trie": {
+        "build": {
+          "meanMs": 1.4398578014390073,
+          "throughputOpsPerSec": 724.7580033735424,
+          "wordsPerSecond": 7247580.033735423
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.00019490506468480568,
+            "throughputOpsPerSec": 5910065.957477722,
+            "samples": 5130704
+          },
+          "nodesVisited": {
+            "average": 9.46,
+            "min": 2,
+            "max": 18,
+            "total": 1892
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.03420917686098811,
+            "throughputOpsPerSec": 293838.74016759824,
+            "samples": 29232
+          },
+          "nodesVisited": {
+            "average": 1085.13,
+            "min": 6,
+            "max": 6506,
+            "total": 217026
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.0720101589255898,
+            "throughputOpsPerSec": 17833.0648254708,
+            "samples": 13887
+          },
+          "nodesVisited": {
+            "average": 742.685,
+            "min": 241,
+            "max": 1050,
+            "total": 148537
+          },
+          "nodesPruned": {
+            "average": 588.34,
+            "min": 170,
+            "max": 835,
+            "total": 117668
+          },
+          "matchesFound": {
+            "average": 1.36,
+            "min": 0,
+            "max": 28,
+            "total": 272
+          },
+          "pruningPercentage": 44.20202475535771
+        },
+        "structure": {
+          "nodeCount": 26303,
+          "maxDepth": 21,
+          "averageDepth": 8.030794966353648,
+          "averageBranchingFactor": 1.4009800788324278,
+          "maxBranchingFactor": 34
+        },
+        "structuralMemory": {
+          "nodeCount": 26303,
+          "totalStoredCharacters": 26302,
+          "estimatedMemory": 1341452
+        },
+        "runtimeMemory": {
+          "memoryBytes": 6700552,
+          "memoryKB": 6543.5078125,
+          "memoryMB": 6.390144348144531
+        },
+        "scaling": {
+          "nodesPerWord": 2.6303,
+          "estimatedMemoryPerWord": 0.00012793083190917968,
+          "buildTimePerWord": 0.00014398578014390075
+        }
+      },
+      "radix": {
+        "build": {
+          "meanMs": 2.6450918654351896,
+          "throughputOpsPerSec": 380.8288192062263,
+          "wordsPerSecond": 3808288.192062263
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.00037085759180948997,
+            "throughputOpsPerSec": 3226003.0583570246,
+            "samples": 2696453
+          },
+          "nodesVisited": {
+            "average": 7.44,
+            "min": 2,
+            "max": 13,
+            "total": 1488
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.01163423928801549,
+            "throughputOpsPerSec": 517694.16999904485,
+            "samples": 85955
+          },
+          "nodesVisited": {
+            "average": 527.725,
+            "min": 5,
+            "max": 3036,
+            "total": 105545
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.11433933798311441,
+            "throughputOpsPerSec": 11165.927725796822,
+            "samples": 8746
+          },
+          "nodesVisited": {
+            "average": 702.945,
+            "min": 212,
+            "max": 1000,
+            "total": 140589
+          },
+          "nodesPruned": {
+            "average": 588.34,
+            "min": 170,
+            "max": 835,
+            "total": 117668
+          },
+          "matchesFound": {
+            "average": 1.36,
+            "min": 0,
+            "max": 28,
+            "total": 272
+          },
+          "pruningPercentage": 45.56236617013285
+        },
+        "structure": {
+          "nodeCount": 12640,
+          "maxDepth": 14,
+          "averageDepth": 6.391534810126582,
+          "averageBranchingFactor": 2.4729015848170612,
+          "maxBranchingFactor": 34
+        },
+        "structuralMemory": {
+          "nodeCount": 12640,
+          "totalStoredCharacters": 26302,
+          "estimatedMemory": 658302
+        },
+        "runtimeMemory": {
+          "memoryBytes": 7248528,
+          "memoryKB": 7078.640625,
+          "memoryMB": 6.9127349853515625
+        },
+        "scaling": {
+          "nodesPerWord": 1.264,
+          "estimatedMemoryPerWord": 0.00006278057098388672,
+          "buildTimePerWord": 0.000264509186543519
+        }
+      }
+    },
+    {
+      "datasetSize": 50000,
+      "datasetStats": {
+        "wordCount": 50000,
+        "averageWordLength": 8.70584,
+        "shortestWordLength": 1,
+        "longestWordLength": 28,
+        "uniqueFirstLetters": 34
+      },
+      "trie": {
+        "build": {
+          "meanMs": 9.305246898148422,
+          "throughputOpsPerSec": 113.33162914386985,
+          "wordsPerSecond": 5666581.457193492
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.00022560777462223556,
+            "throughputOpsPerSec": 5186138.694785346,
+            "samples": 4432472
+          },
+          "nodesVisited": {
+            "average": 9.625,
+            "min": 2,
+            "max": 18,
+            "total": 1925
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.22369280983244857,
+            "throughputOpsPerSec": 90387.25932869091,
+            "samples": 4475
+          },
+          "nodesVisited": {
+            "average": 2450.34,
+            "min": 7,
+            "max": 17566,
+            "total": 490068
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.14245046210823253,
+            "throughputOpsPerSec": 9202.595833265515,
+            "samples": 7020
+          },
+          "nodesVisited": {
+            "average": 1377.365,
+            "min": 417,
+            "max": 2163,
+            "total": 275473
+          },
+          "nodesPruned": {
+            "average": 1165.595,
+            "min": 353,
+            "max": 1825,
+            "total": 233119
+          },
+          "matchesFound": {
+            "average": 1.77,
+            "min": 0,
+            "max": 32,
+            "total": 354
+          },
+          "pruningPercentage": 45.83615157139711
+        },
+        "structure": {
+          "nodeCount": 134295,
+          "maxDepth": 28,
+          "averageDepth": 8.244826687516289,
+          "averageBranchingFactor": 1.3935249558991387,
+          "maxBranchingFactor": 34
+        },
+        "structuralMemory": {
+          "nodeCount": 134295,
+          "totalStoredCharacters": 134294,
+          "estimatedMemory": 6849044
+        },
+        "runtimeMemory": {
+          "memoryBytes": 706016,
+          "memoryKB": 689.46875,
+          "memoryMB": 0.673309326171875
+        },
+        "scaling": {
+          "nodesPerWord": 2.6859,
+          "estimatedMemoryPerWord": 0.00013063514709472658,
+          "buildTimePerWord": 0.00018610493796296842
+        }
+      },
+      "radix": {
+        "build": {
+          "meanMs": 14.36709837142948,
+          "throughputOpsPerSec": 70.31168698024433,
+          "wordsPerSecond": 3515584.3490122166
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.0004078308216378658,
+            "throughputOpsPerSec": 2948315.363719288,
+            "samples": 2451998
+          },
+          "nodesVisited": {
+            "average": 7.745,
+            "min": 2,
+            "max": 15,
+            "total": 1549
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.03721510438762654,
+            "throughputOpsPerSec": 270303.14548864315,
+            "samples": 26871
+          },
+          "nodesVisited": {
+            "average": 1111.015,
+            "min": 5,
+            "max": 7416,
+            "total": 222203
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.20963445923280924,
+            "throughputOpsPerSec": 6250.648150315256,
+            "samples": 4771
+          },
+          "nodesVisited": {
+            "average": 1341.185,
+            "min": 414,
+            "max": 2109,
+            "total": 268237
+          },
+          "nodesPruned": {
+            "average": 1165.595,
+            "min": 353,
+            "max": 1825,
+            "total": 233119
+          },
+          "matchesFound": {
+            "average": 1.77,
+            "min": 0,
+            "max": 32,
+            "total": 354
+          },
+          "pruningPercentage": 46.4976982423667
+        },
+        "structure": {
+          "nodeCount": 62995,
+          "maxDepth": 16,
+          "averageDepth": 6.5532026351297725,
+          "averageBranchingFactor": 2.5127243717590746,
+          "maxBranchingFactor": 34
+        },
+        "structuralMemory": {
+          "nodeCount": 62995,
+          "totalStoredCharacters": 134294,
+          "estimatedMemory": 3284044
+        },
+        "runtimeMemory": {
+          "memoryBytes": 0,
+          "memoryKB": 0,
+          "memoryMB": 0
+        },
+        "scaling": {
+          "nodesPerWord": 1.2599,
+          "estimatedMemoryPerWord": 0.00006263816833496094,
+          "buildTimePerWord": 0.0002873419674285896
+        }
+      }
+    },
+    {
+      "datasetSize": 100000,
+      "datasetStats": {
+        "wordCount": 100000,
+        "averageWordLength": 8.90735,
+        "shortestWordLength": 1,
+        "longestWordLength": 31,
+        "uniqueFirstLetters": 34
+      },
+      "trie": {
+        "build": {
+          "meanMs": 15.453858538461143,
+          "throughputOpsPerSec": 65.03742385794882,
+          "wordsPerSecond": 6503742.385794883
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.0002579860295484591,
+            "throughputOpsPerSec": 4536704.527720713,
+            "samples": 3876179
+          },
+          "nodesVisited": {
+            "average": 9.72,
+            "min": 2,
+            "max": 18,
+            "total": 1944
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.25978194857142267,
+            "throughputOpsPerSec": 69452.73831639388,
+            "samples": 3850
+          },
+          "nodesVisited": {
+            "average": 2499.175,
+            "min": 7,
+            "max": 30840,
+            "total": 499835
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.1534455568514041,
+            "throughputOpsPerSec": 8161.877083995084,
+            "samples": 6517
+          },
+          "nodesVisited": {
+            "average": 1485.27,
+            "min": 490,
+            "max": 2379,
+            "total": 297054
+          },
+          "nodesPruned": {
+            "average": 1269.96,
+            "min": 430,
+            "max": 2019,
+            "total": 253992
+          },
+          "matchesFound": {
+            "average": 2.195,
+            "min": 0,
+            "max": 53,
+            "total": 439
+          },
+          "pruningPercentage": 46.092703694428415
+        },
+        "structure": {
+          "nodeCount": 262844,
+          "maxDepth": 31,
+          "averageDepth": 8.478766873126265,
+          "averageBranchingFactor": 1.402936718049447,
+          "maxBranchingFactor": 34
+        },
+        "structuralMemory": {
+          "nodeCount": 262844,
+          "totalStoredCharacters": 262843,
+          "estimatedMemory": 13405043
+        },
+        "runtimeMemory": {
+          "memoryBytes": 17922192,
+          "memoryKB": 17502.140625,
+          "memoryMB": 17.091934204101562
+        },
+        "scaling": {
+          "nodesPerWord": 2.62844,
+          "estimatedMemoryPerWord": 0.00012784045219421387,
+          "buildTimePerWord": 0.00015453858538461143
+        }
+      },
+      "radix": {
+        "build": {
+          "meanMs": 32.39559120312447,
+          "throughputOpsPerSec": 31.5377232376201,
+          "wordsPerSecond": 3153772.32376201
+        },
+        "exactSearch": {
+          "time": {
+            "meanMs": 0.00046801201573623644,
+            "throughputOpsPerSec": 2768867.8239999916,
+            "samples": 2136698
+          },
+          "nodesVisited": {
+            "average": 8.11,
+            "min": 2,
+            "max": 15,
+            "total": 1622
+          }
+        },
+        "prefixSearch": {
+          "time": {
+            "meanMs": 0.06472130225785862,
+            "throughputOpsPerSec": 181042.07526946353,
+            "samples": 15457
+          },
+          "nodesVisited": {
+            "average": 1197.835,
+            "min": 6,
+            "max": 15046,
+            "total": 239567
+          }
+        },
+        "fuzzySearch": {
+          "time": {
+            "meanMs": 0.22417830755425774,
+            "throughputOpsPerSec": 5606.602644290283,
+            "samples": 4461
+          },
+          "nodesVisited": {
+            "average": 1451.74,
+            "min": 489,
+            "max": 2323,
+            "total": 290348
+          },
+          "nodesPruned": {
+            "average": 1269.96,
+            "min": 430,
+            "max": 2019,
+            "total": 253992
+          },
+          "matchesFound": {
+            "average": 2.195,
+            "min": 0,
+            "max": 53,
+            "total": 439
+          },
+          "pruningPercentage": 46.6605430429511
+        },
+        "structure": {
+          "nodeCount": 125683,
+          "maxDepth": 16,
+          "averageDepth": 6.8127431713119515,
+          "averageBranchingFactor": 2.5040744356557947,
+          "maxBranchingFactor": 34
+        },
+        "structuralMemory": {
+          "nodeCount": 125683,
+          "totalStoredCharacters": 262843,
+          "estimatedMemory": 6546993
+        },
+        "runtimeMemory": {
+          "memoryBytes": 0,
+          "memoryKB": 0,
+          "memoryMB": 0
+        },
+        "scaling": {
+          "nodesPerWord": 1.25683,
+          "estimatedMemoryPerWord": 0.00006243699073791504,
+          "buildTimePerWord": 0.0003239559120312447
         }
       }
     }

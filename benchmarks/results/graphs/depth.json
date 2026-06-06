@@ -1,0 +1,27 @@
+[
+  {
+    "datasetSize": 1000,
+    "trieAvgDepth": 7.186539260490237,
+    "radixAvgDepth": 5.653530377668309
+  },
+  {
+    "datasetSize": 5000,
+    "trieAvgDepth": 8.382972253895858,
+    "radixAvgDepth": 6.636178224035143
+  },
+  {
+    "datasetSize": 10000,
+    "trieAvgDepth": 8.030794966353648,
+    "radixAvgDepth": 6.391534810126582
+  },
+  {
+    "datasetSize": 50000,
+    "trieAvgDepth": 8.244826687516289,
+    "radixAvgDepth": 6.5532026351297725
+  },
+  {
+    "datasetSize": 100000,
+    "trieAvgDepth": 8.478766873126265,
+    "radixAvgDepth": 6.8127431713119515
+  }
+]

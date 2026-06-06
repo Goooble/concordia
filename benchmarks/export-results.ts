@@ -10,30 +10,32 @@ export async function exportStructureCSV(
   const headers = [
     "Dataset Size",
     "Trie Nodes",
+    "Trie Stored Characters",
     "Trie Max Depth",
     "Trie Avg Depth",
-    "Trie Avg Branching",
     "Radix Nodes",
+    "Radix Stored Characters",
     "Radix Max Depth",
     "Radix Avg Depth",
-    "Radix Avg Branching",
-    "Compression Ratio",
     "Node Reduction %",
   ];
 
-  const rows = reports.map((r) => [
-    r.datasetSize,
-    r.trie.structure.nodeCount,
-    r.trie.structure.maxDepth,
-    r.trie.structure.averageDepth.toFixed(2),
-    r.trie.structure.averageBranchingFactor.toFixed(2),
-    r.radix.structure.nodeCount,
-    r.radix.structure.maxDepth,
-    r.radix.structure.averageDepth.toFixed(2),
-    r.radix.structure.averageBranchingFactor.toFixed(2),
-    r.compression.compressionRatio.toFixed(3),
-    r.compression.nodeReductionPercent.toFixed(1),
-  ]);
+  const rows = reports.map((r) => {
+    const nodeReduction =
+      (1 - r.radix.structure.nodeCount / r.trie.structure.nodeCount) * 100;
+    return [
+      r.datasetSize,
+      r.trie.structure.nodeCount,
+      r.trie.structuralMemory.totalStoredCharacters,
+      r.trie.structure.maxDepth,
+      r.trie.structure.averageDepth.toFixed(2),
+      r.radix.structure.nodeCount,
+      r.radix.structuralMemory.totalStoredCharacters,
+      r.radix.structure.maxDepth,
+      r.radix.structure.averageDepth.toFixed(2),
+      nodeReduction.toFixed(1),
+    ];
+  });
 
   const csv = [csvHeader(headers), ...rows.map((r) => csvRow(r))].join("\n");
   await writeFile(outputPath, csv, "utf8");
@@ -45,22 +47,25 @@ export async function exportMemoryCSV(
 ) {
   const headers = [
     "Dataset Size",
-    "Trie Memory MB",
-    "Radix Memory MB",
-    "Memory Reduction %",
+    "Trie Est. Memory (KB)",
+    "Radix Est. Memory (KB)",
+    "Est. Memory Reduction %",
+    "Trie Runtime Heap (MB)",
+    "Radix Runtime Heap (MB)",
   ];
 
   const rows = reports.map((r) => {
-    const trieMemory = r.trie.memory?.memoryMB || 0;
-    const radixMemory = r.radix.memory?.memoryMB || 0;
-    const reduction =
-      trieMemory > 0 ? ((trieMemory - radixMemory) / trieMemory) * 100 : 0;
+    const trieEst = r.trie.structuralMemory.estimatedMemory / 1024;
+    const radixEst = r.radix.structuralMemory.estimatedMemory / 1024;
+    const reduction = ((trieEst - radixEst) / trieEst) * 100;
 
     return [
       r.datasetSize,
-      trieMemory.toFixed(2),
-      radixMemory.toFixed(2),
+      trieEst.toFixed(1),
+      radixEst.toFixed(1),
       reduction.toFixed(1),
+      r.trie.runtimeMemory.memoryMB.toFixed(2),
+      r.radix.runtimeMemory.memoryMB.toFixed(2),
     ];
   });
 
@@ -75,21 +80,21 @@ export async function exportScalingCSV(
   const headers = [
     "Dataset Size",
     "Trie Nodes/Word",
-    "Trie Memory/Word (KB)",
+    "Trie Est. Memory/Word (KB)",
     "Trie BuildTime/Word (ms)",
     "Radix Nodes/Word",
-    "Radix Memory/Word (KB)",
+    "Radix Est. Memory/Word (KB)",
     "Radix BuildTime/Word (ms)",
   ];
 
   const rows = reports.map((r) => [
     r.datasetSize,
-    r.trie.scaling?.nodesPerWord.toFixed(3) || "0",
-    r.trie.scaling?.memoryPerWord.toFixed(4) || "0",
-    r.trie.scaling?.buildTimePerWord.toFixed(4) || "0",
-    r.radix.scaling?.nodesPerWord.toFixed(3) || "0",
-    r.radix.scaling?.memoryPerWord.toFixed(4) || "0",
-    r.radix.scaling?.buildTimePerWord.toFixed(4) || "0",
+    r.trie.scaling.nodesPerWord.toFixed(3),
+    (r.trie.scaling.estimatedMemoryPerWord * 1024).toFixed(2),
+    r.trie.scaling.buildTimePerWord.toFixed(4),
+    r.radix.scaling.nodesPerWord.toFixed(3),
+    (r.radix.scaling.estimatedMemoryPerWord * 1024).toFixed(2),
+    r.radix.scaling.buildTimePerWord.toFixed(4),
   ]);
 
   const csv = [csvHeader(headers), ...rows.map((r) => csvRow(r))].join("\n");
@@ -108,8 +113,8 @@ export async function exportGraphData(
 
   const memoryData = reports.map((r) => ({
     datasetSize: r.datasetSize,
-    trieMB: r.trie.memory?.memoryMB || 0,
-    radixMB: r.radix.memory?.memoryMB || 0,
+    trieEstimatedKB: r.trie.structuralMemory.estimatedMemory / 1024,
+    radixEstimatedKB: r.radix.structuralMemory.estimatedMemory / 1024,
   }));
 
   const buildTimeData = reports.map((r) => ({

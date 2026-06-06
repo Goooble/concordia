@@ -12,6 +12,7 @@ const DOCUMENTS_PATH = resolve(
   //   "src/minisearch/ingestion/documents.json",
   "src/minisearch/ingestion/dictionary.json",
 );
+// const DATASET_SIZES = [1000, 5000, 10000, 50000, 100000] as const;
 const DATASET_SIZES = [1000, 5000, 10000, 50000, 100000] as const;
 
 function createSeededRng(seed: number) {

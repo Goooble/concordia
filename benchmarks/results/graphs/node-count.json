@@ -1,0 +1,27 @@
+[
+  {
+    "datasetSize": 1000,
+    "trie": 2407,
+    "radix": 1218
+  },
+  {
+    "datasetSize": 5000,
+    "trie": 13155,
+    "radix": 6374
+  },
+  {
+    "datasetSize": 10000,
+    "trie": 26303,
+    "radix": 12640
+  },
+  {
+    "datasetSize": 50000,
+    "trie": 134295,
+    "radix": 62995
+  },
+  {
+    "datasetSize": 100000,
+    "trie": 262844,
+    "radix": 125683
+  }
+]

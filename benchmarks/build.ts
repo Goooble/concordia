@@ -26,6 +26,10 @@ import {
   MemoryMetrics,
   ScalingMetrics,
   computeScalingMetrics,
+  StructuralMemoryMetrics,
+  computeTrieStructuralMemory,
+  computeRadixStructuralMemory,
+  CompressionStats,
 } from "./analysis-utils";
 import {
   exportStructureCSV,
@@ -49,28 +53,26 @@ export type CompressionMetrics = {
 export type DatasetReport = {
   datasetSize: number;
   datasetStats: DatasetStats;
-  compression: CompressionMetrics;
   trie: {
     build: BuildResult;
     exactSearch: SearchMetrics;
     prefixSearch: SearchMetrics;
     fuzzySearch: FuzzySearchMetrics;
-    searchMiss: SearchMetrics;
     structure: StructureMetrics;
-    memory?: MemoryMetrics;
-    scaling?: ScalingMetrics;
+    structuralMemory: StructuralMemoryMetrics;
+    runtimeMemory: MemoryMetrics;
+    scaling: ScalingMetrics;
   };
   radix: {
     build: BuildResult;
     exactSearch: SearchMetrics;
     prefixSearch: SearchMetrics;
     fuzzySearch: FuzzySearchMetrics;
-    searchMiss: SearchMetrics;
     structure: StructureMetrics;
-    memory?: MemoryMetrics;
-    scaling?: ScalingMetrics;
+    structuralMemory: StructuralMemoryMetrics;
+    runtimeMemory: MemoryMetrics;
+    scaling: ScalingMetrics;
   };
-  worstCase: WorstCaseSearchResult;
 };
 
 function flattenSearchMetrics(name: string, metrics: SearchMetrics) {
@@ -80,9 +82,6 @@ function flattenSearchMetrics(name: string, metrics: SearchMetrics) {
     throughputOpsPerSec: metrics.time.throughputOpsPerSec,
     samples: metrics.time.samples,
     nodesVisitedAverage: metrics.nodesVisited.average,
-    nodesVisitedMin: metrics.nodesVisited.min,
-    nodesVisitedMax: metrics.nodesVisited.max,
-    nodesVisitedTotal: metrics.nodesVisited.total,
   };
 }
 
@@ -91,19 +90,8 @@ function flattenFuzzySearchMetrics(name: string, metrics: FuzzySearchMetrics) {
     structure: name,
     meanMs: metrics.time.meanMs,
     throughputOpsPerSec: metrics.time.throughputOpsPerSec,
-    samples: metrics.time.samples,
     nodesVisitedAverage: metrics.nodesVisited.average,
-    nodesVisitedMin: metrics.nodesVisited.min,
-    nodesVisitedMax: metrics.nodesVisited.max,
-    nodesVisitedTotal: metrics.nodesVisited.total,
     nodesPrunedAverage: metrics.nodesPruned.average,
-    nodesPrunedMin: metrics.nodesPruned.min,
-    nodesPrunedMax: metrics.nodesPruned.max,
-    nodesPrunedTotal: metrics.nodesPruned.total,
-    matchesFoundAverage: metrics.matchesFound.average,
-    matchesFoundMin: metrics.matchesFound.min,
-    matchesFoundMax: metrics.matchesFound.max,
-    matchesFoundTotal: metrics.matchesFound.total,
     pruningPercentage: metrics.pruningPercentage,
   };
 }
@@ -130,33 +118,16 @@ async function benchmarkBuild(size: number, words: string[]) {
   const trieTask = bench.tasks[0];
   const radixTask = bench.tasks[1];
 
-  // Measure memory separately
-  const trieMemory = measureMemory(() => {
-    const trie = new Trie();
-    for (const word of words) {
-      trie.insert(word);
-    }
-  });
-
-  const radixMemory = measureMemory(() => {
-    const radix = new Radix();
-    for (const word of words) {
-      radix.insert(word);
-    }
-  });
-
   return {
     trie: {
       meanMs: trieTask.result.latency.mean,
       throughputOpsPerSec: trieTask.result.throughput.mean,
       wordsPerSecond: trieTask.result.throughput.mean * size,
-      memory: trieMemory,
     },
     radix: {
       meanMs: radixTask.result.latency.mean,
       throughputOpsPerSec: radixTask.result.throughput.mean,
       wordsPerSecond: radixTask.result.throughput.mean * size,
-      memory: radixMemory,
     },
   };
 }
@@ -170,21 +141,13 @@ async function run() {
     console.log(`\n=== Benchmark dataset ${size} words ===`);
     const words = await getDatasetWords(size);
 
-    const [
-      buildResults,
-      exactResults,
-      prefixResults,
-      fuzzyResults,
-      missResults,
-      worstCaseResults,
-    ] = await Promise.all([
-      benchmarkBuild(size, words),
-      runExactSearchBenchmarks(size),
-      runPrefixSearchBenchmarks(size),
-      runFuzzySearchBenchmarks(size),
-      runSearchMissBenchmarks(size),
-      runWorstCaseSearchBenchmarks(size),
-    ]);
+    const [buildResults, exactResults, prefixResults, fuzzyResults] =
+      await Promise.all([
+        benchmarkBuild(size, words),
+        runExactSearchBenchmarks(size),
+        runPrefixSearchBenchmarks(size),
+        runFuzzySearchBenchmarks(size),
+      ]);
 
     const trie = new Trie();
     const radix = new Radix();
@@ -197,45 +160,51 @@ async function run() {
     const radixStructure = computeRadixStructure(radix);
     const datasetStats = computeDatasetStats(words);
 
-    const compressionRatio = trieStructure.nodeCount
-      ? radixStructure.nodeCount / trieStructure.nodeCount
-      : 0;
-    const nodeReductionPercent = (1 - compressionRatio) * 100;
+    // Compute structural memory metrics
+    const trieStructuralMemory = computeTrieStructuralMemory(trie);
+    const radixStructuralMemory = computeRadixStructuralMemory(radix);
 
-    // Extract memory from build results
-    const trieMemory = (buildResults.trie as any).memory as MemoryMetrics;
-    const radixMemory = (buildResults.radix as any).memory as MemoryMetrics;
+    // Measure runtime heap memory
+    const trieRuntimeMemory = measureMemory(() => {
+      const t = new Trie();
+      for (const word of words) {
+        t.insert(word);
+      }
+    });
 
-    // Compute scaling metrics
+    const radixRuntimeMemory = measureMemory(() => {
+      const r = new Radix();
+      for (const word of words) {
+        r.insert(word);
+      }
+    });
+
+    // Compute scaling metrics using structural memory
     const trieScaling = computeScalingMetrics(
       trieStructure.nodeCount,
-      trieMemory.memoryMB,
-      (buildResults.trie as any).meanMs,
+      trieStructuralMemory.estimatedMemory / (1024 * 1024),
+      buildResults.trie.meanMs,
       size,
     );
 
     const radixScaling = computeScalingMetrics(
       radixStructure.nodeCount,
-      radixMemory.memoryMB,
-      (buildResults.radix as any).meanMs,
+      radixStructuralMemory.estimatedMemory / (1024 * 1024),
+      buildResults.radix.meanMs,
       size,
     );
 
     const datasetReport: DatasetReport = {
       datasetSize: size,
       datasetStats,
-      compression: {
-        compressionRatio,
-        nodeReductionPercent,
-      },
       trie: {
         build: buildResults.trie,
         exactSearch: exactResults.trie,
         prefixSearch: prefixResults.trie,
         fuzzySearch: fuzzyResults.trie,
-        searchMiss: missResults.trie,
         structure: trieStructure,
-        memory: trieMemory,
+        structuralMemory: trieStructuralMemory,
+        runtimeMemory: trieRuntimeMemory,
         scaling: trieScaling,
       },
       radix: {
@@ -243,151 +212,112 @@ async function run() {
         exactSearch: exactResults.radix,
         prefixSearch: prefixResults.radix,
         fuzzySearch: fuzzyResults.radix,
-        searchMiss: missResults.radix,
         structure: radixStructure,
-        memory: radixMemory,
+        structuralMemory: radixStructuralMemory,
+        runtimeMemory: radixRuntimeMemory,
         scaling: radixScaling,
       },
-      worstCase: worstCaseResults,
     };
 
     report.push(datasetReport);
 
-    console.log("Compression Metrics:");
+    // Print concise per-dataset metrics
+    const nodeReduction =
+      (1 - radixStructure.nodeCount / trieStructure.nodeCount) * 100;
+    const depthReduction =
+      (1 - radixStructure.maxDepth / trieStructure.maxDepth) * 100;
+    const memoryReduction =
+      (1 -
+        radixStructuralMemory.estimatedMemory /
+          trieStructuralMemory.estimatedMemory) *
+      100;
+
+    console.log("\nCore Structural Metrics:");
     console.table({
-      "Trie Nodes": trieStructure.nodeCount,
-      "Radix Nodes": radixStructure.nodeCount,
-      "Compression Ratio": compressionRatio.toFixed(3),
-      "Node Reduction %": nodeReductionPercent.toFixed(1),
+      Metric: [
+        "Node Count",
+        "Stored Characters",
+        "Est. Memory (KB)",
+        "Max Depth",
+      ],
+      Trie: [
+        trieStructure.nodeCount,
+        trieStructuralMemory.totalStoredCharacters,
+        (trieStructuralMemory.estimatedMemory / 1024).toFixed(1),
+        trieStructure.maxDepth,
+      ],
+      Radix: [
+        radixStructure.nodeCount,
+        radixStructuralMemory.totalStoredCharacters,
+        (radixStructuralMemory.estimatedMemory / 1024).toFixed(1),
+        radixStructure.maxDepth,
+      ],
     });
-    console.log("Trie structure metrics:");
-    console.table(trieStructure);
-    console.log("Radix structure metrics:");
-    console.table(radixStructure);
-    console.log("Exact search results:");
-    console.table([
-      flattenSearchMetrics("Trie", exactResults.trie),
-      flattenSearchMetrics("Radix", exactResults.radix),
-    ]);
 
-    console.log("Prefix search results:");
-    console.table([
-      flattenSearchMetrics("Trie", prefixResults.trie),
-      flattenSearchMetrics("Radix", prefixResults.radix),
-    ]);
+    console.log("\nCompression Efficiency:");
+    console.table({
+      Metric: [
+        "Node Reduction %",
+        "Max Depth Reduction %",
+        "Est. Memory Reduction %",
+      ],
+      Value: [
+        nodeReduction.toFixed(1),
+        depthReduction.toFixed(1),
+        memoryReduction.toFixed(1),
+      ],
+    });
 
-    console.log("Fuzzy search results:");
-    console.table([
-      flattenFuzzySearchMetrics("Trie", fuzzyResults.trie),
-      flattenFuzzySearchMetrics("Radix", fuzzyResults.radix),
-    ]);
+    // Calculate traversal reductions
+    const prefixTraversalReduction =
+      (1 -
+        prefixResults.radix.nodesVisited.average /
+          prefixResults.trie.nodesVisited.average) *
+      100;
+    const fuzzyTraversalReduction =
+      (1 -
+        fuzzyResults.radix.nodesVisited.average /
+          fuzzyResults.trie.nodesVisited.average) *
+      100;
 
-    console.log("Search miss results:");
-    console.table([
-      flattenSearchMetrics("Trie", missResults.trie),
-      flattenSearchMetrics("Radix", missResults.radix),
-    ]);
-
-    console.log("Worst-case search results (nodes visited):");
-    console.table([
-      {
-        structure: "Trie longest",
-        nodesVisited: worstCaseResults.trie.longest.nodesVisited.average,
-      },
-      {
-        structure: "Trie shortest",
-        nodesVisited: worstCaseResults.trie.shortest.nodesVisited.average,
-      },
-      {
-        structure: "Trie random",
-        nodesVisited: worstCaseResults.trie.random.nodesVisited.average,
-      },
-      {
-        structure: "Trie missing",
-        nodesVisited: worstCaseResults.trie.missing.nodesVisited.average,
-      },
-      {
-        structure: "Radix longest",
-        nodesVisited: worstCaseResults.radix.longest.nodesVisited.average,
-      },
-      {
-        structure: "Radix shortest",
-        nodesVisited: worstCaseResults.radix.shortest.nodesVisited.average,
-      },
-      {
-        structure: "Radix random",
-        nodesVisited: worstCaseResults.radix.random.nodesVisited.average,
-      },
-      {
-        structure: "Radix missing",
-        nodesVisited: worstCaseResults.radix.missing.nodesVisited.average,
-      },
-    ]);
-    console.log("Build results:");
-    console.table([
-      {
-        structure: "Trie",
-        meanMs: buildResults.trie.meanMs,
-        throughputOpsPerSec: buildResults.trie.throughputOpsPerSec,
-        wordsPerSecond: buildResults.trie.wordsPerSecond,
-      },
-      {
-        structure: "Radix",
-        meanMs: buildResults.radix.meanMs,
-        throughputOpsPerSec: buildResults.radix.throughputOpsPerSec,
-        wordsPerSecond: buildResults.radix.wordsPerSecond,
-      },
-    ]);
-
-    console.log("Memory Usage:");
-    console.table([
-      {
-        structure: "Trie",
-        memoryMB: trieMemory.memoryMB.toFixed(2),
-        memoryKB: trieMemory.memoryKB.toFixed(2),
-      },
-      {
-        structure: "Radix",
-        memoryMB: radixMemory.memoryMB.toFixed(2),
-        memoryKB: radixMemory.memoryKB.toFixed(2),
-      },
-    ]);
-
-    console.log("Scaling Metrics:");
-    console.table([
-      {
-        structure: "Trie",
-        nodesPerWord: trieScaling.nodesPerWord.toFixed(3),
-        memoryPerWord: trieScaling.memoryPerWord.toFixed(4),
-        buildTimePerWord: trieScaling.buildTimePerWord.toFixed(6),
-      },
-      {
-        structure: "Radix",
-        nodesPerWord: radixScaling.nodesPerWord.toFixed(3),
-        memoryPerWord: radixScaling.memoryPerWord.toFixed(4),
-        buildTimePerWord: radixScaling.buildTimePerWord.toFixed(6),
-      },
-    ]);
+    console.log("\nTraversal Efficiency Improvements:");
+    console.table({
+      "Search Type": ["Prefix", "Fuzzy"],
+      "Radix Reduction %": [
+        prefixTraversalReduction.toFixed(1),
+        fuzzyTraversalReduction.toFixed(1),
+      ],
+      "Avg Time (ms)": [
+        `Prefix: ${prefixResults.radix.time.meanMs.toFixed(4)}`,
+        `Fuzzy: ${fuzzyResults.radix.time.meanMs.toFixed(4)}`,
+      ],
+    });
   }
 
-  // Print scaling analysis tables
+  // Print scaling analysis summary
   console.log("\n\n=== SCALING ANALYSIS ===\n");
 
   console.log("Node Count Growth:");
   console.table(
     report.map((r) => ({
       "Dataset Size": r.datasetSize,
-      "Trie Nodes": r.trie.structure.nodeCount,
-      "Radix Nodes": r.radix.structure.nodeCount,
+      Trie: r.trie.structure.nodeCount,
+      Radix: r.radix.structure.nodeCount,
+      "Reduction %": (
+        (1 - r.radix.structure.nodeCount / r.trie.structure.nodeCount) *
+        100
+      ).toFixed(1),
     })),
   );
 
-  console.log("Memory Usage Scaling:");
+  console.log("Estimated Memory Scaling:");
   console.table(
     report.map((r) => ({
       "Dataset Size": r.datasetSize,
-      "Trie MB": r.trie.memory?.memoryMB.toFixed(2),
-      "Radix MB": r.radix.memory?.memoryMB.toFixed(2),
+      "Trie (KB)": (r.trie.structuralMemory.estimatedMemory / 1024).toFixed(1),
+      "Radix (KB)": (r.radix.structuralMemory.estimatedMemory / 1024).toFixed(
+        1,
+      ),
     })),
   );
 
@@ -395,63 +325,77 @@ async function run() {
   console.table(
     report.map((r) => ({
       "Dataset Size": r.datasetSize,
-      Trie: r.trie.build.meanMs.toFixed(2),
-      Radix: r.radix.build.meanMs.toFixed(2),
+      Trie: r.trie.build.meanMs.toFixed(3),
+      Radix: r.radix.build.meanMs.toFixed(3),
     })),
   );
 
-  console.log("Average Depth Scaling:");
-  console.table(
-    report.map((r) => ({
-      "Dataset Size": r.datasetSize,
-      "Trie Avg Depth": r.trie.structure.averageDepth.toFixed(2),
-      "Radix Avg Depth": r.radix.structure.averageDepth.toFixed(2),
-    })),
-  );
-
-  // Generate summary report
-  console.log("\n\n=== SUMMARY REPORT ===\n");
+  // Final summary
+  console.log("\n\n=== EFFICIENCY SUMMARY ===\n");
 
   const lastReport = report[report.length - 1];
   if (lastReport) {
-    const nodeReduction = lastReport.compression.nodeReductionPercent;
-    const memoryReduction = lastReport.trie.memory?.memoryMB
-      ? ((lastReport.trie.memory.memoryMB - lastReport.radix.memory!.memoryMB) /
-          lastReport.trie.memory.memoryMB) *
-        100
-      : 0;
+    const nodeReduction =
+      (1 -
+        lastReport.radix.structure.nodeCount /
+          lastReport.trie.structure.nodeCount) *
+      100;
     const depthReduction =
-      ((lastReport.trie.structure.averageDepth -
-        lastReport.radix.structure.averageDepth) /
-        lastReport.trie.structure.averageDepth) *
+      (1 -
+        lastReport.radix.structure.maxDepth /
+          lastReport.trie.structure.maxDepth) *
+      100;
+    const memoryReduction =
+      (1 -
+        lastReport.radix.structuralMemory.estimatedMemory /
+          lastReport.trie.structuralMemory.estimatedMemory) *
+      100;
+
+    const prefixTraversalReduction =
+      (1 -
+        lastReport.radix.prefixSearch.nodesVisited.average /
+          lastReport.trie.prefixSearch.nodesVisited.average) *
+      100;
+    const fuzzyTraversalReduction =
+      (1 -
+        lastReport.radix.fuzzySearch.nodesVisited.average /
+          lastReport.trie.fuzzySearch.nodesVisited.average) *
       100;
 
     const prefixSpeedup =
       lastReport.trie.prefixSearch.time.meanMs /
       lastReport.radix.prefixSearch.time.meanMs;
-    const fuzzyTime =
+    const fuzzySpeedup =
       lastReport.trie.fuzzySearch.time.meanMs /
       lastReport.radix.fuzzySearch.time.meanMs;
-    const fuzzySpeedup =
-      fuzzyTime > 1
-        ? `${fuzzyTime.toFixed(2)}x slower`
-        : `${(1 / fuzzyTime).toFixed(2)}x faster`;
 
-    console.log(`Dataset Size: ${lastReport.datasetSize} words`);
-    console.log(`Dataset Stats:`);
     console.log(
-      `  Words: ${lastReport.datasetStats.wordCount}, ` +
-        `Avg Length: ${lastReport.datasetStats.averageWordLength.toFixed(1)}, ` +
-        `Unique First Letters: ${lastReport.datasetStats.uniqueFirstLetters}`,
+      `Dataset: ${lastReport.datasetSize} words (${lastReport.datasetStats.averageWordLength.toFixed(1)} chars avg)`,
+    );
+    console.log(`\nStructural Efficiency (Radix vs Trie):`);
+    console.log(`  • Node Reduction:       ${nodeReduction.toFixed(1)}%`);
+    console.log(`  • Max Depth Reduction:  ${depthReduction.toFixed(1)}%`);
+    console.log(
+      `  • Estimated Memory:     ${memoryReduction.toFixed(1)}% less`,
+    );
+
+    console.log(`\nSearch Efficiency:`);
+    console.log(
+      `  • Prefix Traversal:     ${prefixTraversalReduction.toFixed(1)}% fewer nodes → ${prefixSpeedup.toFixed(2)}x faster`,
     );
     console.log(
-      `\nRadix Tree Advantages:` +
-        `\n  Node Reduction: ${nodeReduction.toFixed(1)}%` +
-        `\n  Memory Reduction: ${memoryReduction.toFixed(1)}%` +
-        `\n  Depth Reduction: ${depthReduction.toFixed(1)}%` +
-        `\n  Prefix Search Speedup: ${prefixSpeedup.toFixed(2)}x` +
-        `\n  Fuzzy Search: ${fuzzySpeedup}`,
+      `  • Fuzzy Traversal:      ${fuzzyTraversalReduction.toFixed(1)}% fewer nodes → ${fuzzySpeedup.toFixed(2)}x faster`,
     );
+
+    console.log(`\nBuild Performance:`);
+    console.log(
+      `  • Radix: ${lastReport.radix.build.meanMs.toFixed(3)}ms | Trie: ${lastReport.trie.build.meanMs.toFixed(3)}ms`,
+    );
+
+    console.log(
+      `\nNote: Structural metrics (nodes, depth, estimated memory) are more reliable`,
+    );
+    console.log(`for cross-platform comparison than runtime heap usage.`);
   }
 
   // Export to CSV and graph formats
